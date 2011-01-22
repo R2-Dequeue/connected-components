@@ -11,6 +11,7 @@
 #include <stdexcept>
 
 #include "polynomialbase.hpp"
+#include "algebraic.hpp"
 
 #include <boost/foreach.hpp>
 
@@ -210,15 +211,15 @@ GiNaC::ex PolynomialQ::getEx() const
 
     return temp;
 }
-/*
+
 int PolynomialQ::signAt(const Algebraic & a) const
 {
     assert(Invariant());
 
-    PolynomialQ rem(*this % a.polynomial);
+    PolynomialQ remainder(*this % a.polynomial);
     Algebraic alpha(a);
 
-    if (r == 0)
+    if (remainder == 0)
         return 0;
 
     while (true)
@@ -234,13 +235,28 @@ int PolynomialQ::signAt(const Algebraic & a) const
     assert(false);
 
     return -41;
-}*/
+}
 
-/*
-IntervalQ BoundRange(const IntervalQ & interval) const
+GiNaC::numeric PolynomialQ::eval(const GiNaC::numeric & value) const
 {
     assert(Invariant());
-}*/
+
+    GiNaC::ex temp(polynomial.subs(variable == value));
+
+    assert(GiNaC::is_a<GiNaC::numeric>(temp));
+    if (!GiNaC::is_a<GiNaC::numeric>(temp))
+        throw std::runtime_error("PolynomialQ::eval: conversion to numeric"
+                                 "failed unexpectedly.");
+
+    return GiNaC::ex_to<GiNaC::numeric>(temp);
+}
+
+IntervalQ PolynomialQ::boundRange(const IntervalQ & interval) const
+{
+    assert(Invariant());
+
+    return IntervalQ(interval);
+}
 
 void PolynomialQ::TestClass()
 {
