@@ -1,0 +1,44 @@
+Subresultant			poly function		-
+Irreducible Factors		poly function		-
+Find Roots				poly function		-solve,realroot,SeparateIntervals
+Separate Interval		Alg function		-TightenInterval
+
+Poly methods:
+[C]	Sign1					poly class			-BoundRange,TightenInterval
+	Sign					poly class			-Simple,Sign1
+	Simple2					goes w/ Sign		-ANComb,Sres,gcd
+	Simple						"				-Simple,Simple2
+	ANCombination			goes w/ Simple2		-resultant,FindRoots,IrreducibleFactors,TightenInterval
+    BoundRange1				intvl/poly/alg tool	-IntervalMul,IntervalAdd
+    BoundRange						"			-BoundRange,IntervalMul,IntervalAdd
+
+Decide2											-
+
+Alg methods:
+[C]	Compare					Alg class / tool	-TightenInterval
+[C]	Tighten Interval		Alg class			-
+	Approximate				Alg class
+
+CAD methods:
+[C]	CAD2					CAD class			-Project,FindRoots,SamplePoints,FindRoots2,Sign
+
+[C]	Cell					CAD class			-Compare,FindRoots2
+[C]	CellNumber				CAD class			-
+[C]	Connectivity			CAD class			-Cell,CellNumber
+
+	FindRoots2				CAD tool / class	-resultant,IrreducibleFactors,FindRoots,Sign
+[C]	Project					CAD tool / class	-IrreducibleFactors,resultant
+
+	BranchCount				CAD class			-TightenInterval
+	AdjacencyLeft			CAD class			-BranchCount
+	AdjacencyRight			CAD class			-BranchCount
+	Connectivity Matrix		CAD class			-AdjacencyLeft,AdjacencyRight,CellNumber,Closure
+	Closure					goes w/ conn mat.	-
+	SamplePoints			CAD tool / class	-
+
+Need a Sturm polynomial function.
+Maybe make the Sign functions method of poly:
+	int signAt(const Algebraic & a);
+Nothing calls Decide2.
+Only Sign calls Simple.
+BoundRange protected polynomial member?
