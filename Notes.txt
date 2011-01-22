@@ -1,0 +1,92 @@
+type const& name
+	-pass a reference to an object that can't be modified.
+const type & name ??
+type function(...) const { ... } -member function won't modify instance data
+
+Find all uses of const.
+
+type name
+type * name
+type & name
+type name& (?)
+const type name
+type const name (?)
+
+-------------------------
+How to force std::string to use wchar.
+-------------------------
+When to use exceptions?
+	-Constructors
+	-Destructors
+	-member functions
+	-overloaded operators
+-------------------------
+Use namespace?
+How to name my classes.
+-------------------------
+class Name {
+	int x,y;
+public:
+	Name() : x(4), y(abs(-5)) { }        // default values, can call functions
+};
+-------------------------
+"explicit" keyword only useful for constructors that take arguments and aren't
+copy constructors, right?
+
+Can explicit be used for member conversion operators?
+-------------------------
+Is there a naming convention for member functions that return representations
+of their classes (i.e. a toString or toInt method)?
+Similarly for methods that modify the object or return a modified version of
+the object.
+Should I use methods that return const refernces or copies?
+-------------------------
+Which way is best to overload arithmetic operators?  The method way or the
+function way?
+
+What is the best way to manage overloaded '+' and '-'?  Should I just write,
+separate functions and try to keep them synced, which could be difficult, or
+should I use stl template functions, or something else?
+-------------------------
+Do I put the documentation blocks in the headers or the code?
+Learn doc system.
+Figure out unicode; Do I even need to do anything? For VC++? For gcc?
+-------------------------
+Should static data members be defined in .hpp or .cpp?
+-------------------------
+Can you call a constructor on an instance of a class
+(that has already been instantiated)?
+-------------------------
+Different systems:
+	File access
+	Localization
+	BigNum workhorse
+	GUI code
+	Drawing
+-------------------------
+Rational
+
+PolynomialQ
+PolynomialQQ
+PolynomialQQQ
+PolynomialQQQQ
+
+IntervalQ
+
+Algebraic <- PolynomialQ, IntervalQ
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
