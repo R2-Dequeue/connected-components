@@ -6,8 +6,6 @@
 #include <numeric>
 #include <functional>
 
-namespace cc {
-
 // sres
 // sresultant
 // subresultant
@@ -69,18 +67,4 @@ ex SubResultant(const ex & f, const ex & g, const int k, const symbol & x)
     }
 
     return M.determinant();
-}
-
-/*!
- * \brief
- *
- * \param F A list(lst) of any univariate polynomials in x.
- */
-lst IrreducibleFactors(lst F)
-{
-    int n = F.nops();
-
-    assert(n > 0);
-
-    std::accumulate(F.begin(), F.end(), ex(1), multiplies<ex>);
 }
