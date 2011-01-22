@@ -6,11 +6,15 @@
 #ifndef __POLYNOMIALQ__
 #define __POLYNOMIALQ__
 
-#include <ginac/ginac.h>
-
 #include <cassert>
 #include <string>
 #include <vector>
+
+#include <ginac/ginac.h>
+
+class Algebraic; // To allow a circular dependancy.
+#include <boost/numeric/interval.hpp>
+typedef boost::numeric::interval<GiNaC::numeric> IntervalQ;
 
 /*!
  * \brief A class representing univariate polynomials over the rationals.
@@ -43,7 +47,9 @@ public:
     PolynomialQ getDerivative() const;
     PolynomialQ & differentiate();
 
-	GiNaC::numeric eval(const GiNaC::numeric & value); //!< Returns the value of the polynomial at 'value'.
+    int signAt(const Algebraic & a) const;
+	GiNaC::numeric eval(const GiNaC::numeric & value) const;
+	//!< Returns the value of the polynomial at 'value'.
 
 	GiNaC::ex getEx() const;
 
@@ -75,7 +81,7 @@ public:
 
 protected:
 
-//    IntervalQ BoundRange(const IntervalQ & interval) const;
+    IntervalQ boundRange(const IntervalQ & interval) const;
     static void TestCompare(const PolynomialQ p,
                             const GiNaC::ex expected,
                             unsigned int & count);

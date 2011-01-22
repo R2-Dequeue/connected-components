@@ -4,6 +4,7 @@
  */
 
 #include "algebraic.hpp"
+#include "polynomialq.hpp"
 
 #include <cassert>
 
@@ -21,9 +22,9 @@ inline GiNaC::numeric Algebraic::upper() const
     return rootinterval.upper();
 }
 
-inline IntervalQ Algebraic::getInterval()
+inline IntervalQ Algebraic::getInterval() const
 {
-    return pair(rootinterval);
+    return IntervalQ(rootinterval);
 }
 
 /*!
@@ -38,7 +39,7 @@ int Algebraic::Compare(const Algebraic & B) const
 
     Algebraic a(*this), b(B);
 
-    if (a.polynomial != b.polynomial)
+    if (a.polynomial != b.polynomial) // a.Compare(b) != 0, or !a.equalTo(b)
     {
         while (true)
         {
@@ -78,7 +79,7 @@ Algebraic & Algebraic::TightenInterval()
 
     const GiNaC::numeric l = rootinterval.lower(), u = rootinterval.upper(); // invoke copy cons?
     const GiNaC::numeric m = (l + u)/2;
-    const GiNaC::ex sample = polynomial.eval(m);
+    const GiNaC::numeric sample = polynomial.eval(m);
 
     if (sample == 0)
         rootinterval.assign((3*l + u)/4, (l + 3*u)/4);

@@ -10,6 +10,7 @@
 
 #include <ginac/ginac.h>
 
+//class PolynomialQ; // To allow a circular dependancy.
 #include "polynomialq.hpp"
 
 //* This type represents the interval in class Algebraic.
@@ -45,7 +46,7 @@ public:
     inline GiNaC::numeric lower() const; //!< Returns the lower bound of the interval.
     inline GiNaC::numeric upper() const; //!< Returns the upper bound of the interval.
 
-    inline IntervalQ getInterval();
+    inline IntervalQ getInterval() const;
 
     int Compare(const Algebraic & B) const; //!< Compare this number with another.
     Algebraic & TightenInterval(); //!< Shrinks the interval to a proper subset.
@@ -55,6 +56,8 @@ public:
      * \detail This member is public but shouldn't really be published.
      */
 	bool Invariant() const;
+
+	friend class PolynomialQ;
 };
 
 Algebraic operator+(const Algebraic & lhs, const Algebraic & rhs);
