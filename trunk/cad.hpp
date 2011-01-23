@@ -44,6 +44,10 @@ private:
             : y(b), signs(s) {};
 
         Algebraic y;
+        /*!
+         * \todo Change this to a compact type like a pair of bitsets or a
+         *       3-value equivalent of a bitset.
+         */
         std::vector<char> signs; // -1, 0, or 1
     }
 
@@ -70,7 +74,8 @@ public:
     unsigned int CellNumber(const CellIndex & i) const;
 
     /*!
-     * \detail This member is public but shouldn't really be published.
+     * \brief Helper method for internal 'assert' checks.
+     * \detail This method is public but shouldn't really be published.
      */
     bool Invariant() const;
 
@@ -82,7 +87,10 @@ private:
     void AdjacencyLeft(const unsigned int k);
     void AdjacencyRight(const unsigned int k);
 
-    std::vector<PolynomialQ> Project(const std::vector<PolynomialQQ> & F)
+    std::vector<PolynomialQ> Project(const std::vector<PolynomialQQ> & F);
+
+    inline bool isEven(const unsigned int i) const { return (i & 1 == 0); }
+    inline bool isOdd(const unsigned int i) const { return (i & 1 == 1); }
 };
 
 #endif // __CAD__

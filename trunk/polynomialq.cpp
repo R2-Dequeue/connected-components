@@ -206,6 +206,29 @@ PolynomialQ & PolynomialQ::differentiate()
 	return *this;
 }
 
+/*!
+ * \detail Returns a vector containing the unique irreducible factors of the
+ *         polynomial.
+ * \return Each element should only appear once.
+ * \todo Add more error checking and experiment with 'factor(GiNaC::ex)'.
+ */
+std::vector<PolynomialQ> PolynomialQ::getIrreducibleFactors() const
+{
+    assert(Invariant());
+
+    GiNaC::ex p = factor(polynomial);
+
+    std::vector<PolynomialQ> factors;
+
+    for (GiNaC::const_iterator i = p.begin(); i != p.end(); i++)
+        factors.push_back(PolynomialQ(GiNaC::is_a<GiNaC::power>(*i) ?
+                                      (*i).op(0) :
+                                      *i));
+        // The PolyQ constructor will throw if the ex is not a valid poly.
+
+    return factors;
+}
+
 GiNaC::ex PolynomialQ::getEx() const
 {
     GiNaC::ex temp(polynomial);

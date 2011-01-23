@@ -4,7 +4,6 @@
  */
 
 #include "algebraic.hpp"
-//#include "polynomialq.hpp"
 
 #include <cassert>
 
@@ -72,7 +71,8 @@ Algebraic & Algebraic::TightenInterval()
 {
     assert(Invariant());
 
-    const GiNaC::numeric l = rootinterval.lower(), u = rootinterval.upper(); // invoke copy cons?
+    const GiNaC::numeric l = rootinterval.lower(),
+                         u = rootinterval.upper(); // invoke copy cons?
     const GiNaC::numeric m = (l + u)/2;
     const GiNaC::numeric sample = polynomial.eval(m);
 
@@ -105,6 +105,9 @@ float Algebraic::Approximate() const
     return 0; // temp, remove later
 }
 
+/*!
+ * \todo Add check for polynomial irreducibility.
+ */
 bool Algebraic::Invariant() const
 {
     if (this == NULL)

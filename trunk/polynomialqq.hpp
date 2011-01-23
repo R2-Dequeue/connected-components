@@ -51,13 +51,13 @@ public:
     int signAt(const Algebraic & a, const Algebraic & b) const;
 
     /*!
-     * \brief Helper function for internal 'assert' checks.
-     * \detail This member is public but shouldn't really be published.
+     * \brief Helper method for internal 'assert' checks.
+     * \detail This method is public but shouldn't really be published.
      */
     bool Invariant() const;
 };
 
-std::vector<PolynomialQQ> IrreducibleFactors(const std::vector<PolynomialQQ> & F);
-PolynomialQ Resultant(const PolynomialQQ & f, const PolynomialQQ & g, unsigned int var);
+//std::vector<PolynomialQQ> IrreducibleFactors(const std::vector<PolynomialQQ> & F);
+//PolynomialQ Resultant(const PolynomialQQ & f, const PolynomialQQ & g, unsigned int var);
 
 #endif // __POLYNOMIALQQ__

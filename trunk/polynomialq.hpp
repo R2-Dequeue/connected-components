@@ -48,6 +48,8 @@ public:
     PolynomialQ getDerivative() const;
     PolynomialQ & differentiate();
 
+    std::vector<PolynomialQ> getIrreducibleFactors() const;
+
     int signAt(const Algebraic & a) const;
 	GiNaC::numeric eval(const GiNaC::numeric & value) const;
 	//!< Returns the value of the polynomial at 'value'.
@@ -63,8 +65,8 @@ public:
     static void TestClass();
 
     /*!
-     * \brief Helper function for internal 'assert' checks.
-     * \detail This member is public but shouldn't really be published.
+     * \brief Helper method for internal 'assert' checks.
+     * \detail This method is public but shouldn't really be published.
      */
 	bool Invariant() const;
 
