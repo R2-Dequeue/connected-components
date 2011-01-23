@@ -60,6 +60,9 @@ public:
 
 	GiNaC::ex getEx() const;
 
+	static std::vector<PolynomialQ>
+        IrreducibleFactors(const std::vector<PolynomialQ> & F);
+
 	PolynomialQ & operator+=(const PolynomialQ & rhs);
     PolynomialQ & operator-=(const PolynomialQ & rhs);
 	PolynomialQ & operator*=(const PolynomialQ & rhs);
@@ -83,8 +86,14 @@ public:
     friend PolynomialQ operator*(const PolynomialQ & lhs, const GiNaC::numeric & num);
     friend PolynomialQ operator/(const PolynomialQ & lhs, const GiNaC::numeric & num);
 
-    friend inline bool operator==(const PolynomialQ & lhs, const PolynomialQ & rhs);
-    friend inline bool operator!=(const PolynomialQ & lhs, const PolynomialQ & rhs);
+    friend inline bool operator==(const PolynomialQ & lhs, const PolynomialQ & rhs) {
+        assert(lhs.Invariant() && rhs.Invariant());
+        return (lhs.polynomial == rhs.polynomial); }
+    friend inline bool operator!=(const PolynomialQ & lhs, const PolynomialQ & rhs) {
+        assert(lhs.Invariant() && rhs.Invariant());
+        return (lhs.polynomial != rhs.polynomial); }
+
+    friend class PolynomialQQ;
 
 protected:
 
@@ -100,25 +109,7 @@ std::ostream & operator<<(std::ostream & output, const PolynomialQ & p);
 //                         const PolynomialQ & g,
 //                         const int k,
 //                         const GiNaC::symbol & x);
-//std::vector<PolynomialQ> IrreducibleFactors(const std::vector<PolynomialQ> & F);
 //std::list<Algebraic> FindRoots(std::list<PolynomialQ> P);
 //PolynomialQ Resultant(const PolynomialQ & f, const PolynomialQ & g);
-
-// These are the method versions of the binary arithmetic operators.
-PolynomialQ operator+(const PolynomialQ & lhs, const PolynomialQ & rhs);
-PolynomialQ operator-(const PolynomialQ & lhs, const PolynomialQ & rhs);
-PolynomialQ operator*(const PolynomialQ & lhs, const PolynomialQ & rhs);
-PolynomialQ operator/(const PolynomialQ & lhs, const PolynomialQ & rhs);
-PolynomialQ operator%(const PolynomialQ & lhs, const PolynomialQ & rhs);
-
-PolynomialQ operator*(const PolynomialQ & lhs, const GiNaC::numeric & num);
-PolynomialQ operator/(const PolynomialQ & lhs, const GiNaC::numeric & num);
-
-inline bool operator==(const PolynomialQ & lhs, const PolynomialQ & rhs) {
-    assert(lhs.Invariant() && rhs.Invariant());
-    return (lhs.polynomial == rhs.polynomial); }
-inline bool operator!=(const PolynomialQ & lhs, const PolynomialQ & rhs) {
-    assert(lhs.Invariant() && rhs.Invariant());
-    return (lhs.polynomial != rhs.polynomial); }
 
 #endif // __POLYNOMIALQ__

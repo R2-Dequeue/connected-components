@@ -49,7 +49,8 @@ CAD::CAD(const std::list<std::string> & F)
 
     // maybe this should be an assert?
     if (!Invariant())
-        throw logic_error();
+        throw logic_error("CAD Constructor: CAD creation completed, but the"
+                          "result is not canonical.");
 }
 
 bool CAD::Connectivity(const Point & p1, const Point & p2) const
@@ -193,7 +194,7 @@ void CAD::AdjacencyLeft(const unsigned int k)
 
 std::vector<PolynomialQ> CAD::Project(const std::vector<PolynomialQQ> & F)
 {
-    std::vector<PolynomialQQ> G = IrreducibleFactors(F);
+    std::vector<PolynomialQQ> G = PolynomialQQ::IrreducibleFactors(F);
     std::vector<PolynomialQ> P;
 
     for (int i = 0; i < G.size()-1; i++)
@@ -203,5 +204,5 @@ std::vector<PolynomialQ> CAD::Project(const std::vector<PolynomialQQ> & F)
     for (int i = 0; i < G.size(); i++)
         P.push_back(ResultantY(G[i], G[i].getDerivative()));
 
-    return IrreducibleFactors(P);
+    return PolynomialQ::IrreducibleFactors(P);
 }
