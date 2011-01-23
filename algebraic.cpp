@@ -4,7 +4,7 @@
  */
 
 #include "algebraic.hpp"
-#include "polynomialq.hpp"
+//#include "polynomialq.hpp"
 
 #include <cassert>
 
@@ -20,11 +20,6 @@ inline GiNaC::numeric Algebraic::upper() const
     assert(Invariant());
 
     return rootinterval.upper();
-}
-
-inline IntervalQ Algebraic::getInterval() const
-{
-    return IntervalQ(rootinterval);
 }
 
 /*!
