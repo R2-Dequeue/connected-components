@@ -78,12 +78,40 @@ PolynomialQQ::PolynomialQQ(const std::string & s)
     }
 }
 
-PolynomialQQ PolynomialQQ::operator+(const PolynomialQQ & rhs) const
+PolynomialQQ::PolynomialQQ(const char * const s)
 {
-	assert(Invariant());
-	assert(rhs.Invariant());
+    GiNaC::symtab table;
 
-	return PolynomialQQ(polynomial + rhs.polynomial);
+    table[var1.get_name()] = var1;
+    table[var2.get_name()] = var2;
+
+    GiNaC::parser reader(table);
+
+    // parser.strict = true; // must be a typo int the tutorial
+    reader.strict = true;
+
+    // reader(s).expand(); ?
+    polynomial = reader(s); // throws an exception if parsing fails
+
+    if (!Invariant())
+        throw std::invalid_argument("Parsing of polynomial succeded, but the"
+                                    "result is not canonical.");
+}
+
+PolynomialQQ::PolynomialQQ(const GiNaC::ex & e)
+    : polynomial(e)
+{
+    if (!Invariant())
+        throw std::invalid_argument("Parsing of polynomial succeded, but the"
+                                    "result is not canonical.");
+}
+
+PolynomialQQ::PolynomialQQ(const GiNaC::numeric & n)
+    : polynomial(n)
+{
+    if (!Invariant())
+        throw std::invalid_argument("Parsing of polynomial succeded, but the"
+                                    "result is not canonical.");
 }
 
 /*!
@@ -101,14 +129,6 @@ PolynomialQQ & PolynomialQQ::operator+=(const PolynomialQQ & rhs)
 	return *this;
 }
 
-PolynomialQQ PolynomialQQ::operator-(const PolynomialQQ & rhs) const
-{
-	assert(Invariant());
-	assert(rhs.Invariant());
-
-	return PolynomialQQ(polynomial - rhs.polynomial);
-}
-
 /*!
  * \detail Should work in cases such as 'p -= p;'
  */
@@ -122,15 +142,6 @@ PolynomialQQ & PolynomialQQ::operator-=(const PolynomialQQ & rhs)
 	assert(Invariant());
 
 	return *this;
-}
-
-PolynomialQQ PolynomialQQ::operator*(const PolynomialQQ & rhs) const
-{
-	assert(Invariant());
-	assert(rhs.Invariant());
-
-    // need to figure out 'expand'
-	return PolynomialQQ(expand(polynomial * rhs.polynomial));
 }
 
 /*!
@@ -207,6 +218,53 @@ GiNaC::ex PolynomialQQ::getEx() const
     return temp;
 }
 
+std::vector<PolynomialQQ>
+    PolynomialQQ::IrreducibleFactors(const std::vector<PolynomialQQ> & F)
+{
+    // remove '0' polynomials?
+    PolynomialQQ fp = std::accumulate(F.begin(),
+                                 F.end(),
+                                 PolynomialQQ(GiNaC::numeric(1)),
+                                 std::multiplies<PolynomialQQ>());
+
+    assert(fp.Invariant()); // isn't this redundant?
+
+    GiNaC::ex p = factor(fp.polynomial);
+
+    std::vector<PolynomialQQ> factors;
+
+    for (GiNaC::const_iterator i = p.begin(); i != p.end(); i++)
+        factors.push_back(PolynomialQQ(GiNaC::is_a<GiNaC::power>(*i) ?
+                                      (*i).op(0) :
+                                      *i));
+        // The PolyQ constructor will throw if the ex is not a valid poly.
+
+    return factors;
+}
+
+PolynomialQ PolynomialQQ::Resultant(const PolynomialQQ & f,
+                                    const PolynomialQQ & g,
+                                    unsigned int var)
+{
+    assert(f.Invariant());
+    assert(g.Invariant());
+    assert(var == 1 || var == 2);
+
+    if (var != 1 && var != 2)
+        throw std::invalid_argument("Tried to calculate resultant wrt an invalid variable.");
+
+    PolynomialQ p(resultant(f.polynomial,
+                             g.polynomial,
+                             (var == 1) ? PolynomialQQ::var1 : PolynomialQQ::var2));
+
+    if (var == 1)
+        p.polynomial = p.polynomial.subs(var2 == var1);
+
+    assert(p.Invariant());
+
+    return p;
+}
+
 bool PolynomialQQ::Invariant() const
 {
     using namespace GiNaC;
@@ -256,46 +314,15 @@ bool PolynomialQQ::Invariant() const
     return true;
 }
 
-std::vector<PolynomialQQ> getIrreducibleFactors(const std::vector<PolynomialQQ> & F)
-{
-    // remove '0' polynomials?
-    PolynomialQQ fp = std::accumulate(F.begin(),
-                                 F.end(),
-                                 PolynomialQQ(GiNaC::numeric(1)),
-                                 std::multiplies<PolynomialQQ>());
-
-    assert(fp.Invariant()); // isn't this redundant?
-
-    GiNaC::ex p = factor(fp.getEx());
-
-    std::vector<PolynomialQQ> factors;
-
-    for (GiNaC::const_iterator i = p.begin(); i != p.end(); i++)
-        factors.push_back(PolynomialQQ(GiNaC::is_a<GiNaC::power>(*i) ?
-                                      (*i).op(0) :
-                                      *i));
-        // The PolyQ constructor will throw if the ex is not a valid poly.
-
-    return factors;
+PolynomialQQ PolynomialQQ::operator+(const PolynomialQQ & rhs) const {
+	assert(Invariant() && rhs.Invariant());
+	return PolynomialQQ(polynomial + rhs.polynomial);
 }
-/*
-inline PolynomialQ Resultant(const PolynomialQQ & f, const PolynomialQQ & g, unsigned int var)
-{
-    assert(f.Invariant());
-    assert(g.Invariant());
-    assert(var == 1 || var == 2);
-
-    if (variable != 1 && variable != 2)
-        throw invalid_argument("Tried to calculate resultant wrt an invalid variable.");
-
-    PolynomialQQ p(resultant(f.polynomial,
-                             g.polynomial,
-                             (var == 1) : PolynomialQQ::var1 ? PolynomialQQ::var2));
-
-    if (var == 1)
-        p = p.subs(var2 == var1);
-
-    assert(p.Invariant());
-
-    return p;
-}*/
+PolynomialQQ PolynomialQQ::operator-(const PolynomialQQ & rhs) const {
+	assert(Invariant() && rhs.Invariant());
+	return PolynomialQQ(polynomial - rhs.polynomial);
+}
+PolynomialQQ PolynomialQQ::operator*(const PolynomialQQ & rhs) const {
+	assert(Invariant() && rhs.Invariant());
+	return PolynomialQQ(expand(polynomial * rhs.polynomial));
+}

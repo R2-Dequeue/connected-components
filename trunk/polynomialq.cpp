@@ -8,6 +8,7 @@
 #include <string>
 #include <cassert>
 #include <numeric>
+#include <functional>
 #include <stdexcept>
 
 #include "polynomialbase.hpp"
@@ -81,14 +82,16 @@ PolynomialQ::PolynomialQ(const GiNaC::ex & e)
     : polynomial(e)
 {
     if (!Invariant())
-        throw std::invalid_argument("Parsing of polynomial succeded, but the result is not canonical.");
+        throw std::invalid_argument("Parsing of polynomial succeded, but the"
+                                    "result is not canonical.");
 }
 
 PolynomialQ::PolynomialQ(const GiNaC::numeric & n)
     : polynomial(n)
 {
     if (!Invariant())
-        throw std::invalid_argument("Parsing of polynomial succeded, but the result is not canonical.");
+        throw std::invalid_argument("Parsing of polynomial succeded, but the"
+                                    "result is not canonical.");
 }
 
 /*!
@@ -304,6 +307,27 @@ std::vector<Algebraic> PolynomialQ::getRoots(const std::vector<PolynomialQ> & P)
     return std::vector<Algebraic>();
 }
 
+/*!
+ * \detail Returns a vector of unique irreducible factors of the polynomials
+ *         in F.
+ * \return Each element should only appear once.
+ * \todo Add more error checking and handle zero-polynomials.
+ */
+std::vector<PolynomialQ>
+    PolynomialQ::IrreducibleFactors(const std::vector<PolynomialQ> & F)
+{
+    // remove '0' polynomials?
+    PolynomialQ fp = accumulate(F.begin(),
+                                F.end(),
+                                PolynomialQ((GiNaC::numeric)1),
+                                std::multiplies<PolynomialQ>());
+    // implement PolynomialQ.mul(set)?
+
+    GiNaC::ex p = factor(fp.polynomial);
+
+    return PolynomialQ(p).getIrreducibleFactors();
+}
+
 IntervalQ PolynomialQ::boundRange(const IntervalQ & interval) const
 {
     assert(Invariant());
@@ -421,40 +445,6 @@ std::ostream & operator<<(std::ostream & output, const PolynomialQ & p)
 
     return output;
 }
-
-/*!
- * \detail Returns a vector of unique irreducible factors of the polynomials
- *         in F.
- * \return Each element should only appear once.
- * \todo Add more error checking and handle zero-polynomials.
- *//*
-std::vector<PolynomialQ> IrreducibleFactors(const std::vector<PolynomialQ> & F)
-{
-    using namespace GiNaC;
-
-    // remove '0' polynomials?
-    PolynomialQ fp = accumulate(F.begin(),
-                                F.end(),
-                                1,//PolynomialQ(1),
-                                std::multiplies<PolynomialQ>);
-    // implement PolynomialQ.mul(set)?
-
-    assert(fp.Invariant()); // isn't this redundant?
-
-    ex p = factor(fp.polynomial);
-
-    std::vector<PolynomialQ> factors;
-
-    BOOST_FOREACH(const ex & e, p)
-    {
-        if (is_a<power>(e))
-            factors.push_back(PolynomialQ(e.op(0)));
-        else
-            factors.push_back(PolynomialQ(e));
-    }
-
-    return factors;
-}*/
 
 /*!
  * \detail Should work in cases such as 'p += p;'

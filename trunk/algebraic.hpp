@@ -58,14 +58,17 @@ public:
      */
 	bool Invariant() const;
 
+	inline bool operator==(const Algebraic & b) { return (Compare(b) == 0); }
+    inline bool operator!=(const Algebraic & b) { return (Compare(b) != 0); }
+
 	friend class PolynomialQ;
 };
 
-Algebraic operator+(const Algebraic & lhs, const Algebraic & rhs);
-Algebraic operator-(const Algebraic & lhs, const Algebraic & rhs);
-Algebraic operator*(const Algebraic & lhs, const Algebraic & rhs);
-Algebraic operator/(const Algebraic & lhs, const Algebraic & rhs);
-Algebraic operator%(const Algebraic & lhs, const Algebraic & rhs);
+//Algebraic operator+(const Algebraic & lhs, const Algebraic & rhs);
+//Algebraic operator-(const Algebraic & lhs, const Algebraic & rhs);
+//Algebraic operator*(const Algebraic & lhs, const Algebraic & rhs);
+//Algebraic operator/(const Algebraic & lhs, const Algebraic & rhs);
+//Algebraic operator%(const Algebraic & lhs, const Algebraic & rhs);
 
 // make 'friend' or something
 //! Shrinks the internal intervals of a & b so that they don't intersect.
