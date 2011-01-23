@@ -42,3 +42,5 @@ Maybe make the Sign functions method of poly:
 Nothing calls Decide2.
 Only Sign calls Simple.
 BoundRange protected polynomial member?
+IrreducibleFactors is called on only one polynomial exept in one place,
+    Project.

@@ -53,7 +53,8 @@ public:
     float Approximate() const; //!< A floating point approximation of this number.
 
     /*!
-     * \detail This member is public but shouldn't really be published.
+     * \brief Helper method for internal 'assert' checks.
+     * \detail This method is public but shouldn't really be published.
      */
 	bool Invariant() const;
 

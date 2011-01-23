@@ -150,20 +150,17 @@ CellIndex CAD::BranchCount(const CellIndex & ci)
     return CellIndex(L, R);
 }
 
-#define ISEVEN(x) (((x) & 1) == 0)
-#define ISODD(x)  (((x) & 1) == 1)
-
 void CAD::AdjacencyLeft(const unsigned int k)
 {
     assert(Invariant());
     assert(k < stacks.size());
-    assert(ISODD(k)); // Need a more modern way to make sure k is odd.
+    assert(isOdd(k)); // Uses a private helper method.
 
     std::list<unsigned int> r;
 
     for (unsigned int i = 0; i < S[k].size(); i++) // i from 1 to nops(S[k])
     {
-        if (ISODD(i))
+        if (isOdd(i))
         {
             CellIndex bcount = BranchCount(k,i);
             // r := [op(r), seq(i,j=1..bcount.first)];
@@ -177,9 +174,9 @@ void CAD::AdjacencyLeft(const unsigned int k)
 
     for (unsigned int i = 1; i < r.size(); i++) // i from 2 to nops(r)
     {
-        if (ISODD(r[i]) && ISODD(r[i-1]))
+        if (isOdd(r[i]) && isOdd(r[i-1]))
             l := [op(l), l[i-1]+2];
-        else if (ISEVEN(r[i]) && ISEVEN(r[i-1]))
+        else if (isEven(r[i]) && isEven(r[i-1]))
             l := [op(l), l[i-1]];
         else
             l := [op(l), l[i-1]+1];

@@ -181,9 +181,6 @@ int PolynomialQQ::signAt(const Algebraic & a, const Algebraic & b) const
     assert(Invariant());
 }
 
-/*!
- * \todo Add check for irreducibility.
- */
 bool PolynomialQQ::Invariant() const
 {
     using namespace GiNaC;
@@ -233,7 +230,7 @@ bool PolynomialQQ::Invariant() const
     return true;
 }
 
-std::vector<PolynomialQQ> IrreducibleFactors(const std::vector<PolynomialQQ> & F)
+std::vector<PolynomialQQ> getIrreducibleFactors(const std::vector<PolynomialQQ> & F)
 {
     using namespace GiNaC;
 

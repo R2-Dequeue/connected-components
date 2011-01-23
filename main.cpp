@@ -12,6 +12,8 @@
 //#include "cad.hpp"
 #include "polynomialq.hpp"
 
+#include <boost/foreach.hpp>
+
 int main()
 {
     /*
@@ -68,6 +70,47 @@ int main()
     */
 
     PolynomialQ::TestClass();
+
+    PolynomialQ //p("(x-1)(x-2)"),
+                q("x^2-3*x+2");
+
+    std::cout << std::endl << q;
+
+    std::vector<PolynomialQ> factors = q.getIrreducibleFactors();
+    std::cout << "Number of factors: " << factors.size() << std::endl;
+
+    BOOST_FOREACH(const PolynomialQ & p, factors)
+        std::cout << p;
+
+    PolynomialQ p(PolynomialQ("x-5")*PolynomialQ("x-7")*PolynomialQ("x-11"));
+
+    std::cout << std::endl << p;
+
+    factors = p.getIrreducibleFactors();
+    std::cout << "Number of factors: " << factors.size() << std::endl;
+
+    BOOST_FOREACH(const PolynomialQ & poly, factors)
+        std::cout << poly;
+
+    PolynomialQ p1(PolynomialQ("x-5")*PolynomialQ("x-5")*PolynomialQ("x-11"));
+
+    std::cout << std::endl << p1;
+
+    factors = p1.getIrreducibleFactors();
+    std::cout << "Number of factors: " << factors.size() << std::endl;
+
+    BOOST_FOREACH(const PolynomialQ & poly, factors)
+        std::cout << poly;
+
+    PolynomialQ p2(PolynomialQ("x^2-2")*PolynomialQ("x-5")*PolynomialQ("x-11"));
+
+    std::cout << std::endl << p2;
+
+    factors = p2.getIrreducibleFactors();
+    std::cout << "Number of factors: " << factors.size() << std::endl;
+
+    BOOST_FOREACH(const PolynomialQ & poly, factors)
+        std::cout << poly;
 
     std::cin.get();
 
