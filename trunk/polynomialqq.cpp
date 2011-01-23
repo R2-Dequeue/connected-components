@@ -154,7 +154,7 @@ PolynomialQQ PolynomialQQ::getDerivative(unsigned int variable) const
     assert(variable == 1 || variable == 2);
 
     if (variable != 1 && variable != 2)
-        throw invalid_argument("Tried to take derivative wrt an invalid variable.");
+        throw std::invalid_argument("Tried to take derivative wrt an invalid variable.");
 
     PolynomialQQ temp(*this);
 
@@ -169,16 +169,42 @@ PolynomialQQ & PolynomialQQ::differentiate(unsigned int variable)
     assert(variable == 1 || variable == 2);
 
     if (variable != 1 && variable != 2)
-        throw invalid_argument("Tried to take derivative wrt an invalid variable.");
+        throw std::invalid_argument("Tried to take derivative wrt an invalid variable.");
 
     polynomial = polynomial.diff((variable == 1) ? var1 : var2);
 
     return *this;
 }
 
+std::vector<PolynomialQQ> PolynomialQQ::getIrreducibleFactors() const
+{
+    assert(Invariant());
+
+    GiNaC::ex p = factor(polynomial);
+
+    std::vector<PolynomialQQ> factors;
+
+    for (GiNaC::const_iterator i = p.begin(); i != p.end(); i++)
+        factors.push_back(PolynomialQQ(GiNaC::is_a<GiNaC::power>(*i) ?
+                                      (*i).op(0) :
+                                      *i));
+        // The PolyQ constructor will throw if the ex is not a valid poly.
+
+    return factors;
+}
+
 int PolynomialQQ::signAt(const Algebraic & a, const Algebraic & b) const
 {
     assert(Invariant());
+
+    return 0;
+}
+
+GiNaC::ex PolynomialQQ::getEx() const
+{
+    GiNaC::ex temp(polynomial);
+
+    return temp;
 }
 
 bool PolynomialQQ::Invariant() const
@@ -232,31 +258,27 @@ bool PolynomialQQ::Invariant() const
 
 std::vector<PolynomialQQ> getIrreducibleFactors(const std::vector<PolynomialQQ> & F)
 {
-    using namespace GiNaC;
-
     // remove '0' polynomials?
     PolynomialQQ fp = std::accumulate(F.begin(),
                                  F.end(),
-                                 PolynomialQQ(numeric(1)),
+                                 PolynomialQQ(GiNaC::numeric(1)),
                                  std::multiplies<PolynomialQQ>());
 
     assert(fp.Invariant()); // isn't this redundant?
 
-    ex p = factor(fp.polynomial);
+    GiNaC::ex p = factor(fp.getEx());
 
     std::vector<PolynomialQQ> factors;
 
-    BOOST_FOREACH(const ex & e, p)
-    {
-        if (is_a<power>(e))
-            factors.push_back(PolynomialQQ(e.op(0)));
-        else
-            factors.push_back(PolynomialQQ(e));
-    }
+    for (GiNaC::const_iterator i = p.begin(); i != p.end(); i++)
+        factors.push_back(PolynomialQQ(GiNaC::is_a<GiNaC::power>(*i) ?
+                                      (*i).op(0) :
+                                      *i));
+        // The PolyQ constructor will throw if the ex is not a valid poly.
 
     return factors;
 }
-
+/*
 inline PolynomialQ Resultant(const PolynomialQQ & f, const PolynomialQQ & g, unsigned int var)
 {
     assert(f.Invariant());
@@ -276,4 +298,4 @@ inline PolynomialQ Resultant(const PolynomialQQ & f, const PolynomialQQ & g, uns
     assert(p.Invariant());
 
     return p;
-}
+}*/
