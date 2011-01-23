@@ -11,9 +11,10 @@
 #include <stdexcept>
 
 #include "polynomialbase.hpp"
-#include "algebraic.hpp"
 
 #include <boost/foreach.hpp>
+
+#include "algebraic.hpp"
 
 // Field to use
 // Number of variables
@@ -217,14 +218,15 @@ int PolynomialQ::signAt(const Algebraic & a) const
     assert(Invariant());
 
     PolynomialQ remainder(*this % a.polynomial);
-    Algebraic alpha(a);
 
     if (remainder == 0)
         return 0;
 
+    Algebraic alpha(a);
+
     while (true)
     {
-        IntervalQ Y = BoundRange(alpha.getInterval());
+        IntervalQ Y = this->boundRange(alpha.getInterval());
 
         if (Y.upper() < 0) return -1;
         if (Y.lower() > 0) return  1;
@@ -237,6 +239,10 @@ int PolynomialQ::signAt(const Algebraic & a) const
     return -41;
 }
 
+/*!
+ * \param value Must be a rational number.
+ * \return Will be a rational number.
+ */
 GiNaC::numeric PolynomialQ::eval(const GiNaC::numeric & value) const
 {
     assert(Invariant());
@@ -507,20 +513,4 @@ PolynomialQ operator/(const PolynomialQ & lhs, const GiNaC::numeric & num)
     assert(num.is_rational());
 
     return lhs.polynomial/(GiNaC::ex)num; // rely on GiNaC throwing an exception if num==0.
-}
-
-inline bool operator==(const PolynomialQ & lhs, const PolynomialQ & rhs)
-{
-    assert(lhs.Invariant());
-    assert(rhs.Invariant());
-
-    return (lhs.polynomial == rhs.polynomial);
-}
-
-inline bool operator!=(const PolynomialQ & lhs, const PolynomialQ & rhs)
-{
-    assert(lhs.Invariant());
-    assert(rhs.Invariant());
-
-    return (lhs.polynomial != rhs.polynomial);
 }

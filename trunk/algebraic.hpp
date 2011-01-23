@@ -6,15 +6,15 @@
 #ifndef __ALGEBRAIC__
 #define __ALGEBRAIC__
 
-#include <boost/numeric/interval.hpp>
+//#include <boost/numeric/interval.hpp>
 
 #include <ginac/ginac.h>
 
-//class PolynomialQ; // To allow a circular dependancy.
 #include "polynomialq.hpp"
+//class PolynomialQ; // To allow a circular dependancy.
 
-//* This type represents the interval in class Algebraic.
-typedef boost::numeric::interval<GiNaC::numeric> IntervalQ;
+//! This type represents the interval in class Algebraic.
+//typedef boost::numeric::interval<GiNaC::numeric> IntervalQ;
 
 /*!
  * \brief A class representing an algebraic number.
@@ -46,7 +46,7 @@ public:
     inline GiNaC::numeric lower() const; //!< Returns the lower bound of the interval.
     inline GiNaC::numeric upper() const; //!< Returns the upper bound of the interval.
 
-    inline IntervalQ getInterval() const;
+    inline IntervalQ getInterval() const { return IntervalQ(rootinterval); }
 
     int Compare(const Algebraic & B) const; //!< Compare this number with another.
     Algebraic & TightenInterval(); //!< Shrinks the interval to a proper subset.

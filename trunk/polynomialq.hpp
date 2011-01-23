@@ -12,9 +12,10 @@
 
 #include <ginac/ginac.h>
 
-class Algebraic; // To allow a circular dependancy.
 #include <boost/numeric/interval.hpp>
 typedef boost::numeric::interval<GiNaC::numeric> IntervalQ;
+
+class Algebraic; // To allow a circular dependancy.
 
 /*!
  * \brief A class representing univariate polynomials over the rationals.
@@ -107,7 +108,11 @@ PolynomialQ operator%(const PolynomialQ & lhs, const PolynomialQ & rhs);
 PolynomialQ operator*(const PolynomialQ & lhs, const GiNaC::numeric & num);
 PolynomialQ operator/(const PolynomialQ & lhs, const GiNaC::numeric & num);
 
-inline bool operator==(const PolynomialQ & lhs, const PolynomialQ & rhs);
-inline bool operator!=(const PolynomialQ & lhs, const PolynomialQ & rhs);
+inline bool operator==(const PolynomialQ & lhs, const PolynomialQ & rhs) {
+    assert(lhs.Invariant() && rhs.Invariant());
+    return (lhs.polynomial == rhs.polynomial); }
+inline bool operator!=(const PolynomialQ & lhs, const PolynomialQ & rhs) {
+    assert(lhs.Invariant() && rhs.Invariant());
+    return (lhs.polynomial != rhs.polynomial); }
 
 #endif // __POLYNOMIALQ__
