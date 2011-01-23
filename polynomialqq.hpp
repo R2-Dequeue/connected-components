@@ -48,7 +48,11 @@ public:
     PolynomialQQ getDerivative(unsigned int variable) const;
     PolynomialQQ & differentiate(unsigned int variable);
 
+    std::vector<PolynomialQQ> getIrreducibleFactors() const;
+
     int signAt(const Algebraic & a, const Algebraic & b) const;
+
+    GiNaC::ex getEx() const;
 
     /*!
      * \brief Helper method for internal 'assert' checks.

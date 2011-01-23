@@ -158,6 +158,25 @@ inline bool PolynomialQ::isZero() const
 	return (polynomial == 0);
 }
 
+GiNaC::numeric PolynomialQ::getCoeff(const unsigned int i) const
+{
+    assert(Invariant());
+
+    GiNaC::ex c = polynomial.coeff(variable, i);
+
+    // Maybe remove the following two GiNaC tests and let GiNaC throw.
+
+    if (!GiNaC::is_a<GiNaC::numeric>(c))
+        throw std::runtime_error("PolynomialQ::getCoeff: coefficient isn't numeric.");
+
+    GiNaC::numeric num = GiNaC::ex_to<GiNaC::numeric>(c);
+
+    if (!num.is_rational())
+        throw std::runtime_error("PolynomialQ::getCoeff: coefficient isn't rational.");
+
+    return num;
+}
+
 PolynomialQ PolynomialQ::getMonic()
 {
     assert(Invariant());
@@ -280,11 +299,28 @@ GiNaC::numeric PolynomialQ::eval(const GiNaC::numeric & value) const
     return GiNaC::ex_to<GiNaC::numeric>(temp);
 }
 
+std::vector<Algebraic> PolynomialQ::getRoots(const std::vector<PolynomialQ> & P)
+{
+    return std::vector<Algebraic>();
+}
+
 IntervalQ PolynomialQ::boundRange(const IntervalQ & interval) const
 {
     assert(Invariant());
 
-    return IntervalQ(interval);
+    unsigned int d = degree();
+    IntervalQ range(getCoeff(d));
+
+    for (int i = d-1; i >= 0; i--)
+    {
+        range *= interval;
+        range += IntervalQ(getCoeff(i));
+    }
+
+    assert(range.lower().is_rational());
+    assert(range.upper().is_rational());
+
+    return range;
 }
 
 void PolynomialQ::TestClass()
