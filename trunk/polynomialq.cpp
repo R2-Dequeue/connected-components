@@ -328,6 +328,31 @@ std::vector<PolynomialQ>
     return PolynomialQ(p).getIrreducibleFactors();
 }
 
+/*!
+ * \return A rational number.
+ */
+GiNaC::numeric
+    PolynomialQ::Resultant(const PolynomialQ & f, const PolynomialQ & g)
+{
+    assert(f.Invariant());
+    assert(g.Invariant());
+
+    GiNaC::ex res = resultant(f.polynomial, g.polynomial, variable);
+    GiNaC::numeric num;
+
+    if (GiNaC::is_a<GiNaC::numeric>(res))
+    {
+        num = GiNaC::ex_to<GiNaC::numeric>(res);
+
+        if (!num.is_rational())
+            throw std::runtime_error("Result of Resultant is not rational.");
+    }
+    else
+        throw std::runtime_error("Result of Resultant is not numerical.");
+
+    return num;
+}
+
 IntervalQ PolynomialQ::boundRange(const IntervalQ & interval) const
 {
     assert(Invariant());

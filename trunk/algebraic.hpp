@@ -40,6 +40,10 @@ public:
     Algebraic(const PolynomialQ & p, const IntervalQ & i)
         : polynomial(p), rootinterval(i) { assert(Invariant()); };
 
+    //Algebraic(const GiNaC::numeric & n)
+    //    : polynomial(PolynomialQ::variable - n), interval(n)
+    //    { assert(Invariant()); }
+
     // can I make a constructor that will only take STATIC ints or longs?
     // (for initialization).
 

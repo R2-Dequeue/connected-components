@@ -87,7 +87,11 @@ private:
     void AdjacencyLeft(const unsigned int k);
     void AdjacencyRight(const unsigned int k);
 
-    std::vector<PolynomialQ> Project(const std::vector<PolynomialQQ> & F);
+    std::vector<PolynomialQ>
+        Project(const std::vector<PolynomialQQ> & F) const;
+
+    std::vector<Algebraic>
+        SamplePoints(const std::vector<Algebraic> & roots) const;
 
     inline bool isEven(const unsigned int i) const { return (i & 1 == 0); }
     inline bool isOdd(const unsigned int i) const { return (i & 1 == 1); }

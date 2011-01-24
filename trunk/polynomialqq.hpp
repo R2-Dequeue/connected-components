@@ -67,6 +67,13 @@ public:
 
     inline bool operator==(const PolynomialQQ & rhs) const;
     inline bool operator!=(const PolynomialQQ & rhs) const;
+
+protected:
+
+    static Algebraic
+        ANComb(const Algebraic & alpha, const Algebraic & beta, int t);
+    static std::pair< Algebraic, std::vector<PolynomialQ> >
+        Simple(const std::vector<Algebraic> & alphas);
 };
 
 #endif // __POLYNOMIALQQ__
