@@ -253,16 +253,15 @@ PolynomialQ PolynomialQQ::Resultant(const PolynomialQQ & f,
     if (var != 1 && var != 2)
         throw std::invalid_argument("Tried to calculate resultant wrt an invalid variable.");
 
-    PolynomialQ p(resultant(f.polynomial,
-                             g.polynomial,
-                             (var == 1) ? PolynomialQQ::var1 : PolynomialQQ::var2));
+    GiNaC::ex res = resultant(f.polynomial,
+                              g.polynomial,
+                              (var == 1) ? PolynomialQQ::var1 : PolynomialQQ::var2);
 
     if (var == 1)
-        p.polynomial = p.polynomial.subs(var2 == var1);
+        res = res.subs(var2 == var1);
 
-    assert(p.Invariant());
-
-    return p;
+    return PolynomialQ(res); // Hoping constructor will be called and check
+                             // Invariant().
 }
 
 bool PolynomialQQ::Invariant() const
@@ -325,4 +324,36 @@ PolynomialQQ PolynomialQQ::operator-(const PolynomialQQ & rhs) const {
 PolynomialQQ PolynomialQQ::operator*(const PolynomialQQ & rhs) const {
 	assert(Invariant() && rhs.Invariant());
 	return PolynomialQQ(expand(polynomial * rhs.polynomial));
+}
+
+Algebraic
+    PolynomialQQ::ANComb(const Algebraic & alpha, const Algebraic & beta, int t)
+{
+    Algebraic a(alpha), b(beta);
+    GiNaC::ex polya = a.getEx();
+    GiNaC::symbol tmp;
+
+    GiNaC::ex res = resultant(polya.subs(a.getVar() == tmp - b.getVar()*t),
+                              b.getEx(), a.getVar());
+/*
+ A := alpha[2]; // A = [ [l, u], poly]
+ B := beta[2];
+ u := Var(A);
+ v := Var(B);
+ r := resultant(eval(A,u=_z-t*v),B,v);
+ r := eval(r,_z=w);
+ gammas := FindRoots(IrreducibleFactors([r]));
+ alphap := alpha;
+ betap  := beta;
+ while true do
+   IJ := alphap[1] + t * betap[1];
+   for gamma in gammas do
+     K := gamma[1];
+     if K[1] <= IJ[1] and IJ[2] <= K[2] then
+       return gamma;
+     fi;
+   od;
+   alphap := TightenInterval(alphap);
+   betap  := TightenInterval(betap);
+ od; */
 }

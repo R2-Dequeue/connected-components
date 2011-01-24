@@ -63,6 +63,9 @@ public:
 	static std::vector<PolynomialQ>
         IrreducibleFactors(const std::vector<PolynomialQ> & F);
 
+    static GiNaC::numeric
+        Resultant(const PolynomialQ & f, const PolynomialQ & g);
+
 	PolynomialQ & operator+=(const PolynomialQ & rhs);
     PolynomialQ & operator-=(const PolynomialQ & rhs);
 	PolynomialQ & operator*=(const PolynomialQ & rhs);
@@ -110,6 +113,5 @@ std::ostream & operator<<(std::ostream & output, const PolynomialQ & p);
 //                         const int k,
 //                         const GiNaC::symbol & x);
 //std::list<Algebraic> FindRoots(std::list<PolynomialQ> P);
-//PolynomialQ Resultant(const PolynomialQ & f, const PolynomialQ & g);
 
 #endif // __POLYNOMIALQ__

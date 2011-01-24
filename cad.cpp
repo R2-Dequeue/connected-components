@@ -24,7 +24,8 @@ CAD::CAD(const std::list<std::string> & F)
 
     BOOST_FOREACH(const Algebraic & alpha, alphas)
     {
-        std::vector<Algebraic> betas = SamplePoints(FindRoots2(alpha, this->F));
+        std::vector<Algebraic> betas =
+            SamplePoints(CAD::FindRoots2(alpha, this->F));
 
         stacks.push_back(std::vector<Sample>());
         std::vector<Sample> & T = stacks.back;
@@ -192,17 +193,34 @@ void CAD::AdjacencyLeft(const unsigned int k)
     return c;
 }
 
-std::vector<PolynomialQ> CAD::Project(const std::vector<PolynomialQQ> & F)
+std::vector<PolynomialQ> CAD::Project(const std::vector<PolynomialQQ> & F) const
 {
     std::vector<PolynomialQQ> G = PolynomialQQ::IrreducibleFactors(F);
     std::vector<PolynomialQ> P;
 
     for (int i = 0; i < G.size()-1; i++)
         for (int j = i+1; j < G.size(); j++)
-            P.push_back(ResultantY(G[i], G[j]));
+            P.push_back(PolynomialQQ::Resultant(G[i], G[j], 2));
 
     for (int i = 0; i < G.size(); i++)
-        P.push_back(ResultantY(G[i], G[i].getDerivative()));
+        P.push_back(PolynomialQQ::Resultant(G[i], G[i].getDerivative(), 2));
 
     return PolynomialQ::IrreducibleFactors(P);
+}
+
+std::vector<Algebraic>
+    CAD::SamplePoints(const std::vector<Algebraic> & roots) const;
+{
+    std::vector<Algebraic> points;
+    points.reserve(2*roots.size() + 1);
+
+    if (roots.size() == 0)
+    {
+        points.push_back(Algebraic());
+        return points;
+    }
+
+    // Assume roots.size() >= 1.
+
+    BOOST_FOREACH(const Algebraic & a, roots)
 }
