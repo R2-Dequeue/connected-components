@@ -42,6 +42,8 @@ public:
 	inline bool isMonic() const; //!< True iff the leading coefficient is zero.
 	inline bool isZero() const; //!< True iff the polynomial is '0'.
 
+	inline GiNaC::symbol getVariable() const { return variable; }
+
     GiNaC::numeric getCoeff(const unsigned int i) const;
 
     PolynomialQ getMonic();
@@ -65,6 +67,8 @@ public:
 
     static GiNaC::numeric
         Resultant(const PolynomialQ & f, const PolynomialQ & g);
+
+    static std::vector<Algebraic> FindRoots(std::vector<PolynomialQ> P);
 
 	PolynomialQ & operator+=(const PolynomialQ & rhs);
     PolynomialQ & operator-=(const PolynomialQ & rhs);
@@ -112,6 +116,5 @@ std::ostream & operator<<(std::ostream & output, const PolynomialQ & p);
 //                         const PolynomialQ & g,
 //                         const int k,
 //                         const GiNaC::symbol & x);
-//std::list<Algebraic> FindRoots(std::list<PolynomialQ> P);
 
 #endif // __POLYNOMIALQ__

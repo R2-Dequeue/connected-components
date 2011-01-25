@@ -51,9 +51,11 @@ public:
     inline GiNaC::numeric upper() const; //!< Returns the upper bound of the interval.
 
     inline IntervalQ getInterval() const { return IntervalQ(rootinterval); }
+    inline GiNaC::ex getEx() const { return polynomial.getEx(); }
+    inline PolynomialQ getPolynomial() const { return polynomial; }
 
     int Compare(const Algebraic & B) const; //!< Compare this number with another.
-    Algebraic & TightenInterval(); //!< Shrinks the interval to a proper subset.
+    Algebraic & tightenInterval(); //!< Shrinks the interval to a proper subset.
     float Approximate() const; //!< A floating point approximation of this number.
 
     /*!

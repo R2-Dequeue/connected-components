@@ -43,8 +43,8 @@ int Algebraic::Compare(const Algebraic & B) const
             if (a.upper() < b.lower())
                 return -1;
 
-            a.TightenInterval();
-            b.TightenInterval();
+            a.tightenInterval();
+            b.tightenInterval();
         }
     }
     else
@@ -67,7 +67,7 @@ int Algebraic::Compare(const Algebraic & B) const
     return -41;
 }
 
-Algebraic & Algebraic::TightenInterval()
+Algebraic & Algebraic::tightenInterval()
 {
     assert(Invariant());
 
@@ -143,7 +143,7 @@ void SeparateIntervals(Algebraic & a, Algebraic & b)
 
     while ( !(a.upper() < b.lower() || b.upper() < a.lower()) )
     {
-        a.TightenInterval();
-        b.TightenInterval();
+        a.tightenInterval();
+        b.tightenInterval();
     }
 }

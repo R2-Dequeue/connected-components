@@ -6,12 +6,15 @@
 #include "polynomialqq.hpp"
 
 #include "polynomialbase.hpp"
+#include "algebraic.hpp"
 
 #include <stdexcept>
 #include <numeric>
 #include <functional>
 
 #include <boost/foreach.hpp>
+
+#include <boost/numeric/ublas/matrix.hpp>
 
 const GiNaC::symbol & PolynomialQQ::var1 = PolynomialBase::var1;
 const GiNaC::symbol & PolynomialQQ::var2 = PolynomialBase::var2;
@@ -251,7 +254,7 @@ PolynomialQ PolynomialQQ::Resultant(const PolynomialQQ & f,
     assert(var == 1 || var == 2);
 
     if (var != 1 && var != 2)
-        throw std::invalid_argument("Tried to calculate resultant wrt an invalid variable.");
+        throw std::invalid_argument("Tried to calculate Resultant wrt an invalid variable.");
 
     GiNaC::ex res = resultant(f.polynomial,
                               g.polynomial,
@@ -263,6 +266,55 @@ PolynomialQ PolynomialQQ::Resultant(const PolynomialQQ & f,
     return PolynomialQ(res); // Hoping constructor will be called and check
                              // Invariant().
 }
+
+/*!
+ * \detail Returns the kth subresultant of f and g with respect to the variable
+ *         x, including constants like 1 and 0.
+ *
+ * \param f Any univariate polynomial in x.
+ * \param g Same as f.
+ * \param k 0 <= k <= min(deg(f), deg(g)).
+ *//*
+PolynomialQ Subresultant(const PolynomialQQ & f,
+                         const PolynomialQQ & g,
+                         const unsigned int k,
+                         const unsigned int var)
+{
+    int m = f.degree();
+    int n = g.degree();
+
+    assert(f.Invariant());
+    assert(g.Invariant());
+
+    if (k > min(m, n))
+        throw std::invalid_argument("Subresultant: k is out of bounds.");
+
+    if (var != 1 && var != 2)
+        throw std::invalid_argument("Tried to calculate Subresultant wrt an invalid variable.");
+
+    if (m == k && n == k)
+        return ex(g);
+
+    boost::numeric::ublas::matrix<GiNaC::numeric> M(n+m-2*k, n+m-2*k);
+
+    for (int i = 0; i < n-k; i++)
+    {
+        for (int j = i; j <= m+i; j++)
+            M(i, j) = f.coeff(x, m-(j-i));
+
+        M(i, n+m-2*k-1) = f*pow(x, n-k-(i+1));
+    }
+
+    for (int i = n-k+1; i < n+m-2*k; i++)
+    {
+        for (int j = i-(n-k+1); j <= n+(i-(n-k+1)); j++)
+            M(i, j) = g.coeff(x, n-(j-i));
+
+        M(i-(n-k+1), n+m-2*k-1) = f*pow(x, n-k-(i+1));
+    }
+
+    return M.determinant();
+}*/
 
 bool PolynomialQQ::Invariant() const
 {
@@ -331,12 +383,42 @@ Algebraic
 {
     Algebraic a(alpha), b(beta);
     GiNaC::ex polya = a.getEx();
-    GiNaC::symbol tmp;
+    GiNaC::symbol tmp, var(a.getPolynomial().getVariable());;
 
-    GiNaC::ex res = resultant(polya.subs(a.getVar() == tmp - b.getVar()*t),
-                              b.getEx(), a.getVar());
+    GiNaC::ex res = resultant(polya.subs(var == tmp - var*t),
+                              b.getEx(), var);
+    res = res.subs(tmp == var);
+
+    PolynomialQ r(res); // throws on error
+
+    std::vector<Algebraic> gammas =
+        PolynomialQ::FindRoots(r.getIrreducibleFactors());
+
+    // maybe declare a & b here
+
+    while (true)
+    {
+        IntervalQ IJ = a.getInterval() + b.getInterval()*GiNaC::numeric(t);
+
+        BOOST_FOREACH(const Algebraic & gamma, gammas)
+        {
+            IntervalQ K = gamma.getInterval();
+
+            if (K.lower() <= IJ.lower() && IJ.upper() <= K.upper())
+                return gamma;
+        }
+
+        a.tightenInterval();
+        b.tightenInterval();
+    }
+
+    assert(false);
+    throw std::runtime_error("ANComb error.");
+
+    return Algebraic();
+
 /*
- A := alpha[2]; // A = [ [l, u], poly]
+ A := alpha[2]; // A = [ [l, u], poly ]
  B := beta[2];
  u := Var(A);
  v := Var(B);
@@ -356,4 +438,54 @@ Algebraic
    alphap := TightenInterval(alphap);
    betap  := TightenInterval(betap);
  od; */
+}
+
+boost::tuple<Algebraic, PolynomialQ, PolynomialQ>
+    PolynomialQQ::Simple2(const Algebraic & alpha, const Algebraic & beta)
+{
+    GiNaC::symbol var = alpha.getPolynomial().getVariable();
+    int t = 1;
+    GiNaC::symbol tmp;
+    Algebraic gamma;
+
+    while (true)
+    {
+        gamma = PolynomialQQ::ANComb(alpha, beta, t);
+        GiNaC::ex s1 = PolynomialQQ::sres1(alpha.getEx().subs(
+                            var == tmp - var*t),
+                            beta.getEx());
+        //GiNaC::ex g = gcdex(gamma.getEx(), )
+
+        //if (g.degree() == 0)
+            break;
+
+        t++;
+    }
+
+    return boost::make_tuple(gamma, alpha.getPolynomial(),beta.getPolynomial());//S, T);
+
+/* A := alpha[2];
+ B := beta[2];
+ u := Var(A);
+ v := Var(B);
+ t := 1;
+ while true do
+   gamma := ANComb(alpha,beta,_z,t);
+   C     := gamma[2];
+   s1    := Sres(eval(A,u=_z-t*v),B,1,v);
+   g     := gcdex(C, coeff(s1,v,1), _z, 'c1','c2');
+   if degree(g,_z) = 0 then break fi;
+   t := t + 1;
+ od;
+ T  := rem((-coeff(s1,v,0)) * c2 / g, C, _z);
+ S  := _z - t*T;
+ gamma := eval(gamma,_z=w);
+ S     := eval(S,    _z=w);
+ T     := eval(T,    _z=w);
+ return gamma, S, T; */
+}
+
+GiNaC::ex PolynomialQQ::sres1(const GiNaC::ex & f, const GiNaC::ex & g)
+{
+    return 1;
 }
