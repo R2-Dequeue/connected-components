@@ -224,3 +224,33 @@ std::vector<Algebraic>
 
     BOOST_FOREACH(const Algebraic & a, roots)
 }
+
+std::vector<Algebraic>
+    FindRoots2(const Algebraic & alpha, const std::vector<PolynomialQQ> & F)
+{
+    PolynomialQQ fs((GiNaC::numeric)1);
+
+    // Change this to use 'accumulate'.
+    BOOST_FOREACH(const PolynomialQQ & f, F)
+        fs *= f;
+
+    PolynomialQ r = PolynomialQQ::Resultant(alpha.getPolynomial(), fs, 1);
+
+    std::vector<Algebraic> P = PolynomialQ::FindRoots(r.getIrreducibleFactors());
+    std::vector<Algebraic> R;
+    R.reserve(P.size());
+
+    BOOST_FOREACH(const Algebraic & p, P)
+        if (fs.signAt(alpha, p) == 0)
+            R.push_back(p);
+
+    return R;
+
+/*  local Fs,r,G,P,R,i;
+ Fs := product(F[i],i=1..nops(F));
+ r  := resultant(alpha[2],Fs,x);
+ G  := IrreducibleFactors([r]);
+ P  := FindRoots(G);
+ R  := select(p->Sign([alpha,p],Fs)=0,P);
+ return R; */
+}

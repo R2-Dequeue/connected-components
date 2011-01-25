@@ -276,7 +276,7 @@ int PolynomialQ::signAt(const Algebraic & a) const
         if (Y.upper() < 0) return -1;
         if (Y.lower() > 0) return  1;
 
-        alpha.TightenInterval();
+        alpha.tightenInterval();
     }
 
     assert(false);

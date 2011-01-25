@@ -14,6 +14,8 @@
 #include <cassert>
 #include <vector>
 
+#include <boost/tuple/tuple.hpp>
+
 class PolynomialQQ
 {
 private:
@@ -46,6 +48,11 @@ public:
                                  const PolynomialQQ & g,
                                  unsigned int var);
 
+    //static PolynomialQ Subresultant(const PolynomialQQ & f,
+    //                                const PolynomialQQ & g,
+    //                                const unsigned int k,
+    //                                const unsigned int var);
+
 	PolynomialQQ & operator+=(const PolynomialQQ & rhs);
     PolynomialQQ & operator-=(const PolynomialQQ & rhs);
 	PolynomialQQ & operator*=(const PolynomialQQ & rhs);
@@ -74,6 +81,10 @@ protected:
         ANComb(const Algebraic & alpha, const Algebraic & beta, int t);
     static std::pair< Algebraic, std::vector<PolynomialQ> >
         Simple(const std::vector<Algebraic> & alphas);
+    static boost::tuple<Algebraic, PolynomialQ, PolynomialQ>
+        Simple2(const Algebraic & alpha, const Algebraic & beta);
+
+    static GiNaC::ex sres1(const GiNaC::ex & f, const GiNaC::ex & g);
 };
 
 #endif // __POLYNOMIALQQ__
