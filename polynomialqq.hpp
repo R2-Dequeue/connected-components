@@ -37,7 +37,7 @@ public:
 
     std::vector<PolynomialQQ> getIrreducibleFactors() const;
 
-    int signAt(const Algebraic & a, const Algebraic & b) const;
+    int signAt(const Algebraic & alpha, const Algebraic & beta) const;
 
     GiNaC::ex getEx() const;
 
@@ -79,12 +79,13 @@ protected:
 
     static Algebraic
         ANComb(const Algebraic & alpha, const Algebraic & beta, int t);
-    static std::pair< Algebraic, std::vector<PolynomialQ> >
-        Simple(const std::vector<Algebraic> & alphas);
     static boost::tuple<Algebraic, PolynomialQ, PolynomialQ>
-        Simple2(const Algebraic & alpha, const Algebraic & beta);
+        Simple(const Algebraic & alpha, const Algebraic & beta);
 
-    static GiNaC::ex sres1(const GiNaC::ex & f, const GiNaC::ex & g);
+    static GiNaC::ex sres(const GiNaC::ex & f,
+                          const GiNaC::ex & g,
+                          const int k,
+                          const GiNaC::symbol & var);
 };
 
 #endif // __POLYNOMIALQQ__
