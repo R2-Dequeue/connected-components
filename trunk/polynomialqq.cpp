@@ -207,11 +207,27 @@ std::vector<PolynomialQQ> PolynomialQQ::getIrreducibleFactors() const
     return factors;
 }
 
-int PolynomialQQ::signAt(const Algebraic & a, const Algebraic & b) const
+int PolynomialQQ::signAt(const Algebraic & alpha, const Algebraic & beta) const
 {
     assert(Invariant());
 
-    return 0;
+    boost::tuple<Algebraic, PolynomialQ, PolynomialQ> t =
+        PolynomialQQ::Simple(alpha, beta);
+    Algebraic & gamma   = t.get<0>();
+    PolynomialQ & s1    = t.get<1>();
+    PolynomialQ & s2    = t.get<2>();
+
+    PolynomialQ h(polynomial.subs(
+                        GiNaC::lst(var1 == s1.getEx(), var2 == s2.getEx())));
+
+    return h.signAt(gamma);
+
+/*
+ local gamma, Ss, _z, h;
+ gamma, Ss := Simple(alphas,_z);
+ h := eval(f,{seq(Var(alphas[i])=Ss[i],i=1..nops(Ss))});
+ return Sign1(gamma, h, _z);
+*/
 }
 
 GiNaC::ex PolynomialQQ::getEx() const
@@ -441,28 +457,38 @@ Algebraic
 }
 
 boost::tuple<Algebraic, PolynomialQ, PolynomialQ>
-    PolynomialQQ::Simple2(const Algebraic & alpha, const Algebraic & beta)
+    PolynomialQQ::Simple(const Algebraic & alpha, const Algebraic & beta)
 {
     GiNaC::symbol var = alpha.getPolynomial().getVariable();
-    int t = 1;
     GiNaC::symbol tmp;
+    GiNaC::ex s1;
+    GiNaC::ex g;
     Algebraic gamma;
+    int t = 1;
 
     while (true)
     {
         gamma = PolynomialQQ::ANComb(alpha, beta, t);
-        GiNaC::ex s1 = PolynomialQQ::sres1(alpha.getEx().subs(
-                            var == tmp - var*t),
-                            beta.getEx());
-        //GiNaC::ex g = gcdex(gamma.getEx(), )
+        s1 = PolynomialQQ::sres(
+                            alpha.getEx().subs(var == tmp - var*t),
+                            beta.getEx(),
+                            1,
+                            var);
 
-        //if (g.degree() == 0)
+        // s1 is now a polynomial in 'tmp'.
+
+        //g = gcdex(gamma.getEx(), )
+
+        if (g.degree() == 0)
             break;
 
         t++;
     }
 
-    return boost::make_tuple(gamma, alpha.getPolynomial(),beta.getPolynomial());//S, T);
+    PolynomialQ T(s1.coeff(alpha.getPolynomial().getVariable(), 0));
+    PolynomialQ S(T.getVariable() - T.getEx()*t);
+
+    return boost::make_tuple(gamma,S, T);
 
 /* A := alpha[2];
  B := beta[2];
@@ -474,7 +500,9 @@ boost::tuple<Algebraic, PolynomialQ, PolynomialQ>
    C     := gamma[2];
    s1    := Sres(eval(A,u=_z-t*v),B,1,v);
    g     := gcdex(C, coeff(s1,v,1), _z, 'c1','c2');
-   if degree(g,_z) = 0 then break fi;
+   if degree(g,_z) = 0 then
+       break
+   fi;
    t := t + 1;
  od;
  T  := rem((-coeff(s1,v,0)) * c2 / g, C, _z);
@@ -485,7 +513,47 @@ boost::tuple<Algebraic, PolynomialQ, PolynomialQ>
  return gamma, S, T; */
 }
 
-GiNaC::ex PolynomialQQ::sres1(const GiNaC::ex & f, const GiNaC::ex & g)
+GiNaC::ex PolynomialQQ::sres(const GiNaC::ex & f,
+                              const GiNaC::ex & g,
+                              const int k,
+                              const GiNaC::symbol & var)
 {
-    return 1;
+    const int m = f.degree(var);
+    const int n = g.degree(var);
+
+    if (m == k && n == k)
+        return g;
+
+    GiNaC::matrix M(n+m-2*k, n+m-2*k); // k == 1
+
+    for (       int i = 1;      i <= n-k;           i++)
+        for (   int j = 1;      j <= n+m-2*k-1;     j++)
+
+            M(i, j) = f.coeff(var, m-j+i);
+
+    for (       int i = n-k+1;  i <= n+m-2*k; i++)
+        for (   int j = 1;      j <= n+m-2*k-1; j++)
+
+            M(i, j) = g.coeff(var, n-j+(i-(n-k)));
+
+    for (int i = 1;         i <= n-k;       i++)
+        M(i, n+m-2*k) = pow(var, n-k-i)             *f;
+
+    for (int i = n-k+1;     i <= n+m-2*k;   i++)
+        M(i, n+m-2*k) = pow(var, m-k-(i-(n-k)))     *g;
+
+    return M.determinant();
+
+/*
+ local m,n,i,j,Mf,Mfl,Mg,Mgl,M;
+ m   := degree(f,v);
+ n   := degree(g,v);
+ if m=k and n=k then return g fi;
+ Mf  := Matrix(n-k,n-k+m-k-1, (i,j) -> coeff(f,v,m-j+i));
+ Mfl := Vector(n-k, i -> v^(n-k-i) * f);
+ Mg  := Matrix(m-k,n-k+m-k-1, (i,j) -> coeff(g,v,n-j+i));
+ Mgl := Vector(m-k, i -> v^(m-k-i) * g);
+ M   := <<Mf|Mfl>,<Mg|Mgl>>;
+ return Determinant(M);
+*/
 }
