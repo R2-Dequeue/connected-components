@@ -58,8 +58,6 @@ public:
 	GiNaC::numeric eval(const GiNaC::numeric & value) const;
 	//!< Returns the value of the polynomial at 'value'.
 
-	static std::vector<Algebraic> getRoots(const std::vector<PolynomialQ> & P);
-
 	GiNaC::ex getEx() const;
 
 	static std::vector<PolynomialQ>
@@ -68,7 +66,7 @@ public:
     static GiNaC::numeric
         Resultant(const PolynomialQ & f, const PolynomialQ & g);
 
-    static std::vector<Algebraic> FindRoots(std::vector<PolynomialQ> P);
+    static std::vector<Algebraic> FindRoots(const std::vector<PolynomialQ> P);
 
 	PolynomialQ & operator+=(const PolynomialQ & rhs);
     PolynomialQ & operator-=(const PolynomialQ & rhs);
