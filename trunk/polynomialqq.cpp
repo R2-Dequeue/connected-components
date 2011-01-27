@@ -477,7 +477,7 @@ boost::tuple<Algebraic, PolynomialQ, PolynomialQ>
 
         // s1 is now a polynomial in 'tmp'.
 
-        //g = gcdex(gamma.getEx(), )
+        g = gcdex(gamma.getEx().subs(gamma.getVariable() ==, s1.coeff(tmp, 1))
 
         if (g.degree() == 0)
             break;
@@ -531,8 +531,8 @@ GiNaC::ex PolynomialQQ::sres(const GiNaC::ex & f,
 
             M(i, j) = f.coeff(var, m-j+i);
 
-    for (       int i = n-k+1;  i <= n+m-2*k; i++)
-        for (   int j = 1;      j <= n+m-2*k-1; j++)
+    for (       int i = n-k+1;  i <= n+m-2*k;       i++)
+        for (   int j = 1;      j <= n+m-2*k-1;     j++)
 
             M(i, j) = g.coeff(var, n-j+(i-(n-k)));
 

@@ -302,9 +302,65 @@ GiNaC::numeric PolynomialQ::eval(const GiNaC::numeric & value) const
     return GiNaC::ex_to<GiNaC::numeric>(temp);
 }
 
-std::vector<Algebraic> PolynomialQ::getRoots(const std::vector<PolynomialQ> & P)
+std::vector<Algebraic> PolynomialQ::FindRoots(const std::vector<PolynomialQ> P)
 {
-    return std::vector<Algebraic>();
+    std::vector<PolynomialQ> factors = PolynomialQ::IrreducibleFactors(P);
+    std::set<Algebraic> numberSet;
+
+    if (factors.size() == 1)
+        if (factors[0].isConstant())
+        {
+            std::vector<Algebraic> temp; // Empty; constant poly has no roots.
+            return temp;
+        }
+
+    BOOST_FOREACH(const PolynomialQ & f, factors)
+    {
+        if (f.degree() == 1)
+        {
+            GiNaC::ex numberEx = GiNaC::lsolve(f.getEx() == 0, f.getVar());
+
+            if (GiNaC::is_a<GiNaC::numeric>(numberEx))
+            {
+                GiNaC::numeric number = GiNaC::ex_to<GiNaC::numeric>(numberEx);
+
+                if (number.is_rational())
+                {
+                    Algebraic a(f, IntervalQ(number));
+                    numberSet.insert(a);
+                    continue;
+                }
+            }
+
+            throw std::runtime_error();
+
+            /*
+            GiNaC::ex numberEx = GiNaC::lsolve(f.getEx() == 0, f.getVar());
+            GiNaC::numeric number = GiNaC::ex_to<GiNaC::numeric>(numberEx);
+
+            if (!number.is_rational())
+                throw std::runtime_error();
+
+            Algebraic a(f, IntervalQ(number));
+            numberSet.insert(a);
+            continue;
+            */
+        }
+        else (f.degree() == 2)
+        {
+            // Check for complex roots
+            ;
+        }
+        else
+            throw std::runtime_error("PolynomialQ::FindRoots: Got a factor not"
+                                     "of degree 1 or 2.");
+    }
+
+    std::vector<Algebraic> numbers;
+    numbers.reserve(numberSet.size());
+    // Trim intervals and add to vector.
+
+    return numbers;
 }
 
 /*!
@@ -316,7 +372,7 @@ std::vector<Algebraic> PolynomialQ::getRoots(const std::vector<PolynomialQ> & P)
 std::vector<PolynomialQ>
     PolynomialQ::IrreducibleFactors(const std::vector<PolynomialQ> & F)
 {
-    // remove '0' polynomials?
+    // remove '0' polynomials? Monic check?
     PolynomialQ fp = accumulate(F.begin(),
                                 F.end(),
                                 PolynomialQ((GiNaC::numeric)1),
