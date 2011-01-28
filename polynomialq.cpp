@@ -352,7 +352,7 @@ std::vector<Algebraic> PolynomialQ::FindRoots(const std::vector<PolynomialQ> P)
             // \sqrt{b^2-4ac}; or if a=1, \sqrt{b^2-4c}
             GiNaC::numeric discriminant = f.coeff(1)^2 - 4*f.coeff(2)*f.coeff(0);
 
-            if (discriminant >= 0)
+            if (discriminant >= 0) // ==> We have real roots.
             {
                 // Know that f.coeff(2) != 0.
                 GiNaC::numeric left = -f.coeff(1)/(f.coeff(2)*2);
