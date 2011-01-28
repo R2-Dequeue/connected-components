@@ -17,7 +17,7 @@ CAD::CAD(const std::list<std::string> & F)
     BOOST_FOREACH(const std::string & f, F)
         this->F.push_back(PolynomialQQ(f)); // throws invalid_argument on error
 
-    samples = SamplePoints(FindRoots(Project()));
+    samples = SamplePoints(PolynomialQ::FindRoots(Project()));
     std::vector<Algebraic> & alphas = samples;
 
     stacks.reserve(alphas.size());
@@ -228,12 +228,15 @@ std::vector<Algebraic>
 std::vector<Algebraic>
     FindRoots2(const Algebraic & alpha, const std::vector<PolynomialQQ> & F)
 {
-    PolynomialQQ fs((GiNaC::numeric)1);
+    PolynomialQQ fs((GiNaC::ex)1);
 
-    // Change this to use 'accumulate'.
+    // Change this to use 'accumulate',
+    // or implement & use some mul(vector) method.
     BOOST_FOREACH(const PolynomialQQ & f, F)
         fs *= f;
 
+    // make a conversion operator from PolyQ to PolyQQ for alpha.
+    // maybe PolynomialQ::getPolynomialQQ?
     PolynomialQ r = PolynomialQQ::Resultant(alpha.getPolynomial(), fs, 1);
 
     std::vector<Algebraic> P = PolynomialQ::FindRoots(r.getIrreducibleFactors());

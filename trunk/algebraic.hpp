@@ -58,6 +58,9 @@ public:
     Algebraic & tightenInterval(); //!< Shrinks the interval to a proper subset.
     float Approximate() const; //!< A floating point approximation of this number.
 
+    //! Shrinks the internal intervals of a & b so that they don't intersect.
+    void SeparateIntervals(Algebraic & a, Algebraic & b);
+
     /*!
      * \brief Helper method for internal 'assert' checks.
      * \detail This method is public but shouldn't really be published.
@@ -75,9 +78,5 @@ public:
 //Algebraic operator*(const Algebraic & lhs, const Algebraic & rhs);
 //Algebraic operator/(const Algebraic & lhs, const Algebraic & rhs);
 //Algebraic operator%(const Algebraic & lhs, const Algebraic & rhs);
-
-// make 'friend' or something
-//! Shrinks the internal intervals of a & b so that they don't intersect.
-void SeparateIntervals(Algebraic & a, Algebraic & b);
 
 #endif // __ALGEBRAIC__
