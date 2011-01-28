@@ -38,7 +38,7 @@ PolynomialQ::PolynomialQ(const std::string & s)
 
     parser reader(table);
 
-    // parser.strict = true; // must be a typo int the tutorial
+    // parser.strict = true; // must be a typo in the tutorial
     reader.strict = true;
 
     // reader(s).expand(); ?
@@ -62,7 +62,7 @@ PolynomialQ::PolynomialQ(const char * const s)
 
     parser reader(table);
 
-    // parser.strict = true; // must be a typo int the tutorial
+    // parser.strict = true; // must be a typo in the tutorial
     reader.strict = true;
 
     std::string a(s);
@@ -349,7 +349,15 @@ std::vector<Algebraic> PolynomialQ::FindRoots(const std::vector<PolynomialQ> P)
         else (f.degree() == 2)
         {
             // Check for complex roots
-            ;
+            // \sqrt{b^2-4ac}; or if a=1, \sqrt{b^2-4c}
+            GiNaC::numeric discriminant = f.coeff(1)^2 - 4*f.coeff(2)*f.coeff(0);
+
+            if (discriminant >= 0)
+            {
+                // Know that f.coeff(2) != 0.
+                GiNaC::numeric left = -f.coeff(1)/(f.coeff(2)*2);
+                GiNaC::numeric right = GiNaC::sqrt(discriminant)/(f.coeff(2)*2);
+            }
         }
         else
             throw std::runtime_error("PolynomialQ::FindRoots: Got a factor not"
