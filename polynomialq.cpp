@@ -302,10 +302,16 @@ GiNaC::numeric PolynomialQ::eval(const GiNaC::numeric & value) const
     return GiNaC::ex_to<GiNaC::numeric>(temp);
 }
 
+/*!
+ * \todo Find resource (preferably consice) for exceptions thrown by the STL.
+ */
 std::vector<Algebraic> PolynomialQ::FindRoots(const std::vector<PolynomialQ> P)
 {
+    /*
+    How should I handle 0 or other constant polynomials?
+    */
     std::vector<PolynomialQ> factors = PolynomialQ::IrreducibleFactors(P);
-    std::set<Algebraic> numberSet;
+    std::set<Algebraic> numberSet; // Use this to sort alpebraic numbers.
 
     if (factors.size() == 1)
         if (factors[0].isConstant())
@@ -364,9 +370,11 @@ std::vector<Algebraic> PolynomialQ::FindRoots(const std::vector<PolynomialQ> P)
                                      "of degree 1 or 2.");
     }
 
-    std::vector<Algebraic> numbers;
-    numbers.reserve(numberSet.size());
-    // Trim intervals and add to vector.
+    std::vector<Algebraic> numbers(numberSet.begin(), numberSet.end());
+    // numbers.reserve(numberSet.size());
+
+    for (int i = 0; i < numbers.size()-1; i++)
+        Algebraic::SeparateIntervals(numbers[i], numbers[i+1]);
 
     return numbers;
 }
@@ -387,9 +395,7 @@ std::vector<PolynomialQ>
                                 std::multiplies<PolynomialQ>());
     // implement PolynomialQ.mul(set)?
 
-    GiNaC::ex p = factor(fp.polynomial);
-
-    return PolynomialQ(p).getIrreducibleFactors();
+    return p.getIrreducibleFactors();
 }
 
 /*!
