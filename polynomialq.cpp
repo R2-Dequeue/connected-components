@@ -167,15 +167,11 @@ GiNaC::numeric PolynomialQ::getCoeff(const unsigned int i) const
 
     GiNaC::ex c = polynomial.coeff(variable, i);
 
-    // Maybe remove the following two GiNaC tests and let GiNaC throw.
-
-    if (!GiNaC::is_a<GiNaC::numeric>(c))
-        throw std::runtime_error("PolynomialQ::getCoeff: coefficient isn't numeric.");
+    assert(GiNaC::is_a<GiNaC::numeric>(c));
 
     GiNaC::numeric num = GiNaC::ex_to<GiNaC::numeric>(c);
 
-    if (!num.is_rational())
-        throw std::runtime_error("PolynomialQ::getCoeff: coefficient isn't rational.");
+    assert(num.is_rational());
 
     return num;
 }
@@ -184,9 +180,7 @@ PolynomialQ PolynomialQ::getMonic()
 {
     assert(Invariant());
 
-    PolynomialQ temp;
-
-    temp.polynomial = (polynomial / polynomial.lcoeff(variable)).expand();
+    PolynomialQ temp((polynomial / polynomial.lcoeff(variable)).expand());
 
     assert(temp.Invariant());
 
@@ -286,23 +280,30 @@ int PolynomialQ::signAt(const Algebraic & a) const
 
 /*!
  * \param value Must be a rational number.
+ * \throws invalid_argument If value is not rational.
  * \return Will be a rational number.
  */
 GiNaC::numeric PolynomialQ::eval(const GiNaC::numeric & value) const
 {
     assert(Invariant());
+    
+    if (!GiNaC::is_a<GiNaC::numeric>(value))
+    	throw std::invalid_argument("PolynomialQ::eval: value passed is not"
+    								"rational.");
 
     GiNaC::ex temp(polynomial.subs(variable == value));
 
     assert(GiNaC::is_a<GiNaC::numeric>(temp));
-    if (!GiNaC::is_a<GiNaC::numeric>(temp))
-        throw std::runtime_error("PolynomialQ::eval: conversion to numeric"
-                                 "failed unexpectedly.");
 
-    return GiNaC::ex_to<GiNaC::numeric>(temp);
+    return GiNaC::ex_to<GiNaC::numeric>(temp); // Will this work? ex_to returns
+    										   // a reference.  Hopefully a new
+    										   // object is created.
 }
 
 /*!
+ * \return A vector of the roots of the polynomials in P.  The elements in the
+ *		   returned vector are unique; multiple roots or roots that appear in
+ *		   more than one polynomial are represented only once.
  * \todo Find resource (preferably consice) for exceptions thrown by the STL.
  */
 std::vector<Algebraic> PolynomialQ::FindRoots(const std::vector<PolynomialQ> P)
@@ -384,6 +385,7 @@ std::vector<Algebraic> PolynomialQ::FindRoots(const std::vector<PolynomialQ> P)
  *         in F.
  * \return Each element should only appear once.
  * \todo Add more error checking and handle zero-polynomials.
+ *		 Also, decide how to handle constant factors of polynomials.
  */
 std::vector<PolynomialQ>
     PolynomialQ::IrreducibleFactors(const std::vector<PolynomialQ> & F)
@@ -408,17 +410,12 @@ GiNaC::numeric
     assert(g.Invariant());
 
     GiNaC::ex res = resultant(f.polynomial, g.polynomial, variable);
-    GiNaC::numeric num;
-
-    if (GiNaC::is_a<GiNaC::numeric>(res))
-    {
-        num = GiNaC::ex_to<GiNaC::numeric>(res);
-
-        if (!num.is_rational())
-            throw std::runtime_error("Result of Resultant is not rational.");
-    }
-    else
-        throw std::runtime_error("Result of Resultant is not numerical.");
+    
+    assert(GiNaC::is_a<GiNaC::numeric>(res));
+    
+    GiNaC::numeric num = GiNaC::ex_to<GiNaC::numeric>(res);
+    
+    assert(num.is_rational());
 
     return num;
 }
