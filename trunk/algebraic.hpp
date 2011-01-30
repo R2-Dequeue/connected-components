@@ -27,7 +27,7 @@ class Algebraic
 {
 private:
 
-    PolynomialQ polynomial; //!< The poly that has as a root this number.
+    PolynomialQ polynomial; //!< Irreducible polynomial.
     IntervalQ rootinterval; //!< The interval that contains this number.
 
 public:
@@ -56,10 +56,10 @@ public:
 
     int Compare(const Algebraic & B) const; //!< Compare this number with another.
     Algebraic & tightenInterval(); //!< Shrinks the interval to a proper subset.
-    float Approximate() const; //!< A floating point approximation of this number.
+    double Approximate() const; //!< A floating point approximation of this number.
 
     //! Shrinks the internal intervals of a & b so that they don't intersect.
-    void SeparateIntervals(Algebraic & a, Algebraic & b);
+    static void SeparateIntervals(Algebraic & a, Algebraic & b);
 
     /*!
      * \brief Helper method for internal 'assert' checks.

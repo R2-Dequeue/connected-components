@@ -161,6 +161,20 @@ inline bool PolynomialQ::isZero() const
 	return (polynomial == 0);
 }
 
+bool PolynomialQ::isIrreducible() const
+{
+	assert(Invariant());
+	
+	if (this->degree() > 2)
+		return false;
+	
+	// Assuming getIrreducibleFactors ignores constant factors.
+	if (this->getIrreducibleFactors().size() > 1)
+		return false;
+	
+	return true;
+}
+
 GiNaC::numeric PolynomialQ::getCoeff(const unsigned int i) const
 {
     assert(Invariant());
@@ -227,6 +241,7 @@ PolynomialQ & PolynomialQ::differentiate()
  *         polynomial.
  * \return Each element should only appear once.
  * \todo Add more error checking and experiment with 'factor(GiNaC::ex)'.
+ *		 How does 'factor' handle constant factors?
  */
 std::vector<PolynomialQ> PolynomialQ::getIrreducibleFactors() const
 {
