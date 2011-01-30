@@ -95,19 +95,11 @@ Algebraic & Algebraic::tightenInterval()
  * \detail Uses Newton's method to find a floating point approximation of the
  *         algebraic number.
  */
-float Algebraic::Approximate() const
+double Algebraic::Approximate() const
 {
     assert(Invariant());
-
-    //GiNaC::ex der = polynomial.diff();
-    //GiNaC::ex x0 = (rootinterval.lower() + rootinterval.upper()) / 2; // rootinterval.median();
-
-    return 0; // temp, remove later
 }
 
-/*!
- * \todo Add check for polynomial irreducibility.
- */
 bool Algebraic::Invariant() const
 {
     if (this == NULL)
@@ -128,6 +120,9 @@ bool Algebraic::Invariant() const
 
     if (!polynomial.Invariant())
         return false;
+    
+    if (!polynomial.isIrreducible())
+    	return false;
 
     return true;
 }
@@ -136,7 +131,7 @@ bool Algebraic::Invariant() const
  * \detail Modifies the parameters by resizing the intervals until they do not
  *         intersect.
  */
-void SeparateIntervals(Algebraic & a, Algebraic & b)
+void Algebraic::SeparateIntervals(Algebraic & a, Algebraic & b)
 {
     assert(a.Invariant());
     assert(b.Invariant());

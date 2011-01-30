@@ -17,7 +17,7 @@ CAD::CAD(const std::list<std::string> & F)
     BOOST_FOREACH(const std::string & f, F)
         this->F.push_back(PolynomialQQ(f)); // throws invalid_argument on error
 
-    samples = SamplePoints(PolynomialQ::FindRoots(Project()));
+    samples = CAD::SamplePoints(PolynomialQ::FindRoots(Project()));
     std::vector<Algebraic> & alphas = samples;
 
     stacks.reserve(alphas.size());
@@ -85,11 +85,6 @@ unsigned int CAD::CellNumber(const CellIndex & i) const
 
 bool CAD::Invariant() const
 {
-    // make sure stacks is not empty.
-    // make sure there are no empty stacks in 'stacks'.
-    // make sure all signs are -1, 0, or 1.
-    // check all algebraics are invariant.
-
     if (this == NULL)
         return false;
 
@@ -120,11 +115,40 @@ bool CAD::Invariant() const
 
 void CAD::ConnectivityMatrix()
 {
+	const std::vector< std::vector<Sample> > & S = stacks;
+	
+	unsigned int n = 0;
+	
+	BOOST_FOREACH(const std::vector<Sample> & s, S)
+		n += s.size();
+	
+	// matrix mat(n,n,identity);
+	
+	for (unsigned int k = 1; k < S.size(); k += 2)
+	{
+		cMatrix(i, j) = 1; // The diagonal already set and symmetry is
+						   // maintained internally by the matrix class.
+	}
+/*
+ local n,i,j,k,adjM,a,c,s;
+ n := add(nops(s), s in S);
+ adjM := Matrix(n, (i,j) -> `if`(i=j,1,0));
+ for k from 2 to nops(S) by 2 do
+   a := [op(AdjacencyLeft(F,S,k)), op(AdjacencyRight(F,S,k))];
+   for c in a do
+     i := CellNumber(S, c[1]);
+     j := CellNumber(S, c[2]);
+     adjM[i,j] := 1;
+     adjM[j,i] := 1;
+   od;
+ od;
+ return Closure(adjM);
+ */
 }
 
 CellIndex CAD::BranchCount(const CellIndex & ci)
 {
-    Algebraic & xcoord = samples[ci.first]; // stacks[ci.first][ci.second].x;
+    Algebraic & xcoord = samples[ci.first];
     Algebraic & ycoord = stacks[ci.first][ci.second].y;
 
     unsigned int nroots = 0, L = 0, R = 0;
@@ -140,7 +164,7 @@ CellIndex CAD::BranchCount(const CellIndex & ci)
         if (nroots == 0) then
             break;
 
-        xcoord.TightenInterval();
+        xcoord.tightenInterval();
     }
 
     BOOST_FOREACH(const PolynomialQQ & f, F)
@@ -208,25 +232,67 @@ std::vector<PolynomialQ> CAD::Project(const std::vector<PolynomialQQ> & F) const
     return PolynomialQ::IrreducibleFactors(P);
 }
 
+/*!
+ * \param roots Must be an ordered vector of Algebraic numbers.
+ * \return A vector of Algebraic numbers with new numbers inserted between
+ *		   and on each end of the numbers in roots.
+ */
 std::vector<Algebraic>
     CAD::SamplePoints(const std::vector<Algebraic> & roots) const;
 {
-    std::vector<Algebraic> points;
-    points.reserve(2*roots.size() + 1);
+    std::vector<Algebraic> S;
+    S.reserve(2*roots.size() + 1);
 
     if (roots.size() == 0)
     {
-        points.push_back(Algebraic());
+        S.push_back(Algebraic());
         return points;
     }
 
     // Assume roots.size() >= 1.
+    
+    GiNaC::numeric s = roots.front().lower() - 1;
+    S.push_back(Algebraic(CAD::MakePoly(s), IntervalQ(s)));
+    
+    for (unsigned int i = 1; i < roots.size(); i++)
+    {
+    	s = (roots[i-1].upper() + roots[i].lower())/2;
+    	S.push_back(Algebraic(CAD::MakePoly(s), IntervalQ(s)));
+    	S.push_back(roots[i]);
+    }
+    
+    s = roots.back().upper() + 1;
+    S.push_back(Algebraic(CAD::MakePoly(s), IntervalQ(s)));
 
-    BOOST_FOREACH(const Algebraic & a, roots)
+	return S;
+/*local n,S,s,w,i,lb,ub;
+ n := nops(R);
+ if n = 0 then
+   return [[[0,0],v-0]];
+ fi;
+ s := R[1][1][1]-1;
+ S  := [[[s,s],v-s],R[1]];  
+ for i from 2 to n do
+   lb := R[i-1][1][2];
+   ub := R[i  ][1][1];
+   s  := (ub + lb)/2;
+   S  := [op(S),[[s,s],v-s],R[i]];  
+ od;
+ s := R[n][1][2]+1;
+ S  := [op(S),[[s,s],v-s]];  
+ return S;	*/
+}
+
+inline PolynomialQ CAD::MakePoly(const GiNaC::numeric & num)
+{
+	PolynomialQ p;
+	
+	return PolynomialQ(GiNaC::ex(p.getVar() - num));
 }
 
 std::vector<Algebraic>
-    FindRoots2(const Algebraic & alpha, const std::vector<PolynomialQQ> & F)
+    CAD::FindRoots2(const Algebraic & alpha,
+    				const std::vector<PolynomialQQ> & F)
 {
     PolynomialQQ fs((GiNaC::ex)1);
 

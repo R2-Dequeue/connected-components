@@ -41,6 +41,7 @@ public:
 	inline int degree() const; //!< The degree of the polynomial.
 	inline bool isMonic() const; //!< True iff the leading coefficient is zero.
 	inline bool isZero() const; //!< True iff the polynomial is '0'.
+	bool isIrreducible() const;
 
 	inline GiNaC::symbol getVariable() const { return variable; }
 
