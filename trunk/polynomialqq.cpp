@@ -408,7 +408,7 @@ Algebraic
     PolynomialQ r(res); // throws on error
 
     std::vector<Algebraic> gammas =
-        PolynomialQ::FindRoots(r.getIrreducibleFactors());
+    	PolynomialQ::FindRoots(r.getIrreducibleFactors());
 
     // maybe declare a & b here
 
@@ -429,7 +429,8 @@ Algebraic
     }
 
     assert(false);
-    throw std::runtime_error("ANComb error.");
+    throw std::runtime_error("ANComb error. This point should not have been"
+    						 "reached");
 
     return Algebraic();
 

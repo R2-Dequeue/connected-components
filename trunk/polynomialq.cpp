@@ -28,6 +28,9 @@
 
 const GiNaC::symbol & PolynomialQ::variable = PolynomialBase::var1;
 
+/*!
+ * \throws parse_error Thrown if string s is an invalid polynomial.
+ */
 PolynomialQ::PolynomialQ(const std::string & s)
 {
     polynomial = PolynomialQ::ParseString(s);
@@ -35,6 +38,9 @@ PolynomialQ::PolynomialQ(const std::string & s)
     assert(Invariant());
 }
 
+/*!
+ * \throws parse_error Thrown if string s is an invalid polynomial.
+ */
 PolynomialQ::PolynomialQ(const char * const a)
 {
 	std::string s(a);
@@ -44,61 +50,27 @@ PolynomialQ::PolynomialQ(const char * const a)
     assert(Invariant());
 }
 
+/*!
+ * \throws invalid_argument Thrown if e is not a valid univariate rational
+ *							polynomial in 'variable'.
+ */
 PolynomialQ::PolynomialQ(const GiNaC::ex & e)
     : polynomial(e)
 {
     if (!Invariant())
-        throw std::invalid_argument("Parsing of polynomial succeded, but the"
-                                    "result is not canonical.");
+        throw std::invalid_argument("PolynomialQ Constructor: GiNaC expression"
+        							"e is not a valid polynomial.");
 }
 
+/*!
+ * \throws invalid_argument Thrown if n is not a rational number.
+ */
 PolynomialQ::PolynomialQ(const GiNaC::numeric & n)
     : polynomial(n)
 {
     if (!Invariant())
-        throw std::invalid_argument("Parsing of polynomial succeded, but the"
-                                    "result is not canonical.");
-}
-
-/*!
- * \detail This method checks that the internal state is free of errors. It is
- *         intended to be used only with 'assert' at the begining of its
- *         methods ( assert(Invariant()); ).
- * \todo Add check for irreducibility.
- */
-bool PolynomialQ::Invariant() const
-{
-    using namespace GiNaC;
-
-	if (this == NULL)
-		return false;
-
-    // is this false if there are additional variables?
-    if (!polynomial.is_polynomial(variable))
-        return false;
-
-    if (!polynomial.info(info_flags::rational_polynomial))
-        return false;
-
-    //if (polynomial == ex()) // should always be at least 'ex(0)'.
-    //    return false;
-
-    int deg = polynomial.degree(variable);
-
-    for (int i = 0; i <= deg; i++)
-    {
-        if (is_a<numeric>(polynomial.coeff(variable, i)))
-        {
-            numeric c = ex_to<numeric>(polynomial.coeff(variable, i));
-
-            if (!c.is_rational())
-                return false;
-        }
-        else
-            return false;
-    }
-
-    return true;
+        throw std::invalid_argument("PolynomialQ Constructor: GiNaC numeric"
+        							"n is not a valid rational number.");
 }
 
 /*!
@@ -141,6 +113,10 @@ bool PolynomialQ::isIrreducible() const
 	return true;
 }
 
+/*!
+ * \param i i is valid for all unsigned int values.  0 will be returned for
+ *			i > this->degree().
+ */
 GiNaC::numeric PolynomialQ::getCoeff(const unsigned int i) const
 {
     assert(Invariant());
@@ -156,7 +132,7 @@ GiNaC::numeric PolynomialQ::getCoeff(const unsigned int i) const
     return num;
 }
 
-PolynomialQ PolynomialQ::getMonic()
+inline PolynomialQ PolynomialQ::getMonic() const
 {
     assert(Invariant());
 
@@ -167,23 +143,29 @@ PolynomialQ PolynomialQ::getMonic()
     return temp;
 }
 
-PolynomialQ & PolynomialQ::makeMonic()
+/*!
+ * \detail In the case that this is the zero polynomial, then this method
+ *		   modifies nothing.
+ */
+inline PolynomialQ & PolynomialQ::makeMonic()
 {
     assert(Invariant());
-
-    polynomial = (polynomial / polynomial.lcoeff(variable)).expand();
-
-    assert(Invariant());
+    
+    if (!this->isZero()) // ==> Leading coefficient is non-zero.
+    {
+    	polynomial = (polynomial / polynomial.lcoeff(variable)).expand();
+    	
+    	assert(Invariant());
+    }
 
     return *this;
 }
 
-PolynomialQ PolynomialQ::getDerivative() const
+inline PolynomialQ PolynomialQ::getDerivative() const
 {
     assert(Invariant());
 
     PolynomialQ temp(*this);
-
     temp.differentiate();
 
     return temp;
@@ -193,7 +175,7 @@ PolynomialQ PolynomialQ::getDerivative() const
  * \detail Note that this modifies the polynomial object; this doesn't just
  *         return a new polynomial that is the derivative.
  */
-PolynomialQ & PolynomialQ::differentiate()
+inline PolynomialQ & PolynomialQ::differentiate()
 {
 	assert(Invariant());
 
@@ -226,7 +208,7 @@ std::vector<PolynomialQ> PolynomialQ::getIrreducibleFactors() const
     return factors;
 }
 
-GiNaC::ex PolynomialQ::getEx() const
+inline GiNaC::ex PolynomialQ::getEx() const
 {
     GiNaC::ex temp(polynomial);
 
@@ -353,7 +335,6 @@ std::vector<Algebraic> PolynomialQ::FindRoots(const std::vector<PolynomialQ> P)
     }
 
     std::vector<Algebraic> numbers(numberSet.begin(), numberSet.end());
-    // numbers.reserve(numberSet.size());
 
     for (int i = 0; i < numbers.size()-1; i++)
         Algebraic::SeparateIntervals(numbers[i], numbers[i+1]);
@@ -513,9 +494,51 @@ void PolynomialQ::TestCompare(const PolynomialQ p,
 }
 
 /*!
+ * \detail This method checks that the internal state is free of errors. It is
+ *         intended to be used only with 'assert' at the begining of its
+ *         methods ( assert(Invariant()); ).
+ * \todo Add check for irreducibility.
+ */
+bool PolynomialQ::Invariant() const
+{
+    using namespace GiNaC;
+
+	if (this == NULL)
+		return false;
+
+    // is this false if there are additional variables?
+    if (!polynomial.is_polynomial(variable))
+        return false;
+
+    if (!polynomial.info(info_flags::rational_polynomial))
+        return false;
+
+    //if (polynomial == ex()) // should always be at least 'ex(0)'.
+    //    return false;
+
+    int deg = polynomial.degree(variable);
+
+    for (int i = 0; i <= deg; i++)
+    {
+        if (is_a<numeric>(polynomial.coeff(variable, i)))
+        {
+            numeric c = ex_to<numeric>(polynomial.coeff(variable, i));
+
+            if (!c.is_rational())
+                return false;
+        }
+        else
+            return false;
+    }
+
+    return true;
+}
+
+/*!
  * \detail Parses the string wrt the internal variable.
  * \throws parse_error Thrown by GiNaC if parsing fails (inherits
  *		   invalid_argument).
+ * \todo Report 'parser.strict' typo in the tutorial.
  */
 inline PolynomialQ PolynomialQ::ParseString(const std::string & s)
 {
@@ -523,11 +546,12 @@ inline PolynomialQ PolynomialQ::ParseString(const std::string & s)
 
     table[variable.get_name()] = variable;
 
-    GiNaC::parser reader(table);
-    reader.strict = true;
+    GiNaC::parser reader(table); // reader(table, true);
+    reader.strict = true; // Tells reader to throw if variables besides
+    					  // 'variable' appear in the passed string.
 
     // reader(s).expand(); ?
-    PolynomialQ p = reader(s); // throws an exception if parsing fails
+    PolynomialQ p(reader(s)); // throws an exception if parsing fails
     
     return p;
 }
@@ -654,5 +678,6 @@ PolynomialQ operator/(const PolynomialQ & lhs, const GiNaC::numeric & num)
     assert(lhs.Invariant());
     assert(num.is_rational());
 
-    return lhs.polynomial/(GiNaC::ex)num; // rely on GiNaC throwing an exception if num==0.
+    return lhs.polynomial/(GiNaC::ex)num; // rely on GiNaC throwing an exception
+    									  // if num == 0.
 }
