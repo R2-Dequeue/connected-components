@@ -22,6 +22,8 @@ class Algebraic; // To allow a circular dependancy.
  *
  * \detail The rationals are represented by bignum rationals and the polynomials
  *         are only limited by memory.
+ * \todo Add higher derivative function.
+ * \todo Move test methods into proper test class and make it a friend.
  */
 class PolynomialQ
 {
@@ -39,7 +41,7 @@ public:
 	PolynomialQ(const GiNaC::numeric & n);
 
 	inline int degree() const; //!< The degree of the polynomial.
-	inline bool isMonic() const; //!< True iff the leading coefficient is zero.
+	inline bool isMonic() const; //!< True iff the leading coefficient is 1.
 	inline bool isZero() const; //!< True iff the polynomial is '0'.
 	bool isIrreducible() const;
 
@@ -47,19 +49,20 @@ public:
 
     GiNaC::numeric getCoeff(const unsigned int i) const;
 
-    PolynomialQ getMonic();
-	PolynomialQ & makeMonic();
+    inline PolynomialQ getMonic() const;
+	inline PolynomialQ & makeMonic();
 
-    PolynomialQ getDerivative() const;
-    PolynomialQ & differentiate();
+    inline PolynomialQ getDerivative() const;
+    inline PolynomialQ & differentiate();
 
     std::vector<PolynomialQ> getIrreducibleFactors() const;
 
+	//! Returns the sign of f(a).
     int signAt(const Algebraic & a) const;
 	GiNaC::numeric eval(const GiNaC::numeric & value) const;
 	//!< Returns the value of the polynomial at 'value'.
 
-	GiNaC::ex getEx() const;
+	inline GiNaC::ex getEx() const;
 
 	static std::vector<PolynomialQ>
         IrreducibleFactors(const std::vector<PolynomialQ> & F);
