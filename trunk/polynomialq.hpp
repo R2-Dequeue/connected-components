@@ -34,7 +34,7 @@ public:
 
 	PolynomialQ() : polynomial(0) {} //!< The default constructor.
 	PolynomialQ(const std::string & s); //!< Parse a polynomial from a string.
-	PolynomialQ(const char * const s);
+	PolynomialQ(const char * const a);
 	PolynomialQ(const GiNaC::ex & e);
 	PolynomialQ(const GiNaC::numeric & n);
 
@@ -107,6 +107,7 @@ protected:
     static void TestCompare(const PolynomialQ p,
                             const GiNaC::ex expected,
                             unsigned int & count);
+    static inline PolynomialQ ParseString(const std::string & s);
 };
 
 std::ostream & operator<<(std::ostream & output, const PolynomialQ & p);

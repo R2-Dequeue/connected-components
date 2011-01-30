@@ -30,52 +30,18 @@ const GiNaC::symbol & PolynomialQ::variable = PolynomialBase::var1;
 
 PolynomialQ::PolynomialQ(const std::string & s)
 {
-    using namespace GiNaC;
-
-    symtab table;
-
-    table[variable.get_name()] = variable;
-
-    parser reader(table);
-
-    // parser.strict = true; // must be a typo in the tutorial
-    reader.strict = true;
-
-    // reader(s).expand(); ?
-    polynomial = reader(s); // throws an exception if parsing fails
+    polynomial = PolynomialQ::ParseString(s);
 
     assert(Invariant());
-
-    if (!Invariant())
-        throw std::invalid_argument("PolynomialQ Constructor: Parsing"
-                                    "univariate polynomial over the rationals"
-                                    "failed.");
 }
 
-PolynomialQ::PolynomialQ(const char * const s)
+PolynomialQ::PolynomialQ(const char * const a)
 {
-    using namespace GiNaC;
-
-    symtab table;
-
-    table[variable.get_name()] = variable;
-
-    parser reader(table);
-
-    // parser.strict = true; // must be a typo in the tutorial
-    reader.strict = true;
-
-    std::string a(s);
-
-    // reader(s).expand(); ?
-    polynomial = reader(a); // throws an exception if parsing fails
+	std::string s(a);
+	
+	polynomial = PolynomialQ::ParseString(s);
 
     assert(Invariant());
-
-    if (!Invariant())
-        throw std::invalid_argument("PolynomialQ Constructor: Parsing"
-                                    "univariate polynomial over the rationals"
-                                    "failed.");
 }
 
 PolynomialQ::PolynomialQ(const GiNaC::ex & e)
@@ -544,6 +510,26 @@ void PolynomialQ::TestCompare(const PolynomialQ p,
 
         count++;
     }
+}
+
+/*!
+ * \detail Parses the string wrt the internal variable.
+ * \throws parse_error Thrown by GiNaC if parsing fails (inherits
+ *		   invalid_argument).
+ */
+inline PolynomialQ PolynomialQ::ParseString(const std::string & s)
+{
+	GiNaC::symtab table;
+
+    table[variable.get_name()] = variable;
+
+    GiNaC::parser reader(table);
+    reader.strict = true;
+
+    // reader(s).expand(); ?
+    PolynomialQ p = reader(s); // throws an exception if parsing fails
+    
+    return p;
 }
 
 std::ostream & operator<<(std::ostream & output, const PolynomialQ & p)

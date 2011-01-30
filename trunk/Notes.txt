@@ -74,6 +74,9 @@ PolynomialQQQQ
 IntervalQ
 
 Algebraic <- PolynomialQ, IntervalQ
+-------------------------
+GiNaC::parser throws a parse_error exception (subclass of invalid_argument).
+-------------------------
 
 
 
