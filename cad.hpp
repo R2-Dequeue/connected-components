@@ -80,7 +80,7 @@ public:
      * \brief Helper method for internal 'assert' checks.
      * \detail This method is public but shouldn't really be published.
      */
-    bool Invariant() const;
+    bool Invariants() const;
 
 private:
 

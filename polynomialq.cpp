@@ -35,7 +35,7 @@ PolynomialQ::PolynomialQ(const std::string & s)
 {
     polynomial = PolynomialQ::ParseString(s);
 
-    assert(Invariant());
+    assert(Invariants());
 }
 
 /*!
@@ -47,7 +47,7 @@ PolynomialQ::PolynomialQ(const char * const a)
 	
 	polynomial = PolynomialQ::ParseString(s);
 
-    assert(Invariant());
+    assert(Invariants());
 }
 
 /*!
@@ -57,7 +57,7 @@ PolynomialQ::PolynomialQ(const char * const a)
 PolynomialQ::PolynomialQ(const GiNaC::ex & e)
     : polynomial(e)
 {
-    if (!Invariant())
+    if (!Invariants())
         throw std::invalid_argument("PolynomialQ Constructor: GiNaC expression"
         							"e is not a valid polynomial.");
 }
@@ -68,7 +68,7 @@ PolynomialQ::PolynomialQ(const GiNaC::ex & e)
 PolynomialQ::PolynomialQ(const GiNaC::numeric & n)
     : polynomial(n)
 {
-    if (!Invariant())
+    if (!Invariants())
         throw std::invalid_argument("PolynomialQ Constructor: GiNaC numeric"
         							"n is not a valid rational number.");
 }
@@ -80,28 +80,28 @@ PolynomialQ::PolynomialQ(const GiNaC::numeric & n)
  */
 inline int PolynomialQ::degree() const
 {
-	assert(Invariant());
+	assert(Invariants());
 
 	return polynomial.degree(variable);
 }
 
 inline bool PolynomialQ::isMonic() const
 {
-	assert(Invariant());
+	assert(Invariants());
 
 	return (polynomial.lcoeff(variable) == 1);
 }
 
 inline bool PolynomialQ::isZero() const
 {
-	assert(Invariant());
+	assert(Invariants());
 
 	return (polynomial == 0);
 }
 
 bool PolynomialQ::isIrreducible() const
 {
-	assert(Invariant());
+	assert(Invariants());
 	
 	if (this->degree() > 2)
 		return false;
@@ -113,13 +113,26 @@ bool PolynomialQ::isIrreducible() const
 	return true;
 }
 
+inline bool PolynomialQ::isConstant() const
+{
+	// Ways to check if constant:
+	// 1) this->degree() == 0 (maybe add a check for -1 in case degree function
+	//						   changes behaviour in the future).
+	// 2) If the set of symbols in 'polynomial' is empty.
+	// 3) If lcoeff == tcoeff.
+	
+	assert(Invariants());
+	
+	return (this->degree() == 0 || this->degree() == -1);
+}
+
 /*!
  * \param i i is valid for all unsigned int values.  0 will be returned for
  *			i > this->degree().
  */
 GiNaC::numeric PolynomialQ::getCoeff(const unsigned int i) const
 {
-    assert(Invariant());
+    assert(Invariants());
 
     GiNaC::ex c = polynomial.coeff(variable, i);
 
@@ -134,11 +147,11 @@ GiNaC::numeric PolynomialQ::getCoeff(const unsigned int i) const
 
 inline PolynomialQ PolynomialQ::getMonic() const
 {
-    assert(Invariant());
+    assert(Invariants());
 
     PolynomialQ temp((polynomial / polynomial.lcoeff(variable)).expand());
 
-    assert(temp.Invariant());
+    assert(temp.Invariants());
 
     return temp;
 }
@@ -149,13 +162,13 @@ inline PolynomialQ PolynomialQ::getMonic() const
  */
 inline PolynomialQ & PolynomialQ::makeMonic()
 {
-    assert(Invariant());
+    assert(Invariants());
     
     if (!this->isZero()) // ==> Leading coefficient is non-zero.
     {
     	polynomial = (polynomial / polynomial.lcoeff(variable)).expand();
     	
-    	assert(Invariant());
+    	assert(Invariants());
     }
 
     return *this;
@@ -163,7 +176,7 @@ inline PolynomialQ & PolynomialQ::makeMonic()
 
 inline PolynomialQ PolynomialQ::getDerivative() const
 {
-    assert(Invariant());
+    assert(Invariants());
 
     PolynomialQ temp(*this);
     temp.differentiate();
@@ -177,7 +190,7 @@ inline PolynomialQ PolynomialQ::getDerivative() const
  */
 inline PolynomialQ & PolynomialQ::differentiate()
 {
-	assert(Invariant());
+	assert(Invariants());
 
     polynomial = polynomial.diff(variable);
 
@@ -193,7 +206,7 @@ inline PolynomialQ & PolynomialQ::differentiate()
  */
 std::vector<PolynomialQ> PolynomialQ::getIrreducibleFactors() const
 {
-    assert(Invariant());
+    assert(Invariants());
 
     GiNaC::ex p = factor(polynomial);
 
@@ -217,7 +230,7 @@ inline GiNaC::ex PolynomialQ::getEx() const
 
 int PolynomialQ::signAt(const Algebraic & a) const
 {
-    assert(Invariant());
+    assert(Invariants());
 
     PolynomialQ remainder(*this % a.polynomial);
 
@@ -248,7 +261,7 @@ int PolynomialQ::signAt(const Algebraic & a) const
  */
 GiNaC::numeric PolynomialQ::eval(const GiNaC::numeric & value) const
 {
-    assert(Invariant());
+    assert(Invariants());
     
     if (!GiNaC::is_a<GiNaC::numeric>(value))
     	throw std::invalid_argument("PolynomialQ::eval: value passed is not"
@@ -368,8 +381,8 @@ std::vector<PolynomialQ>
 GiNaC::numeric
     PolynomialQ::Resultant(const PolynomialQ & f, const PolynomialQ & g)
 {
-    assert(f.Invariant());
-    assert(g.Invariant());
+    assert(f.Invariants());
+    assert(g.Invariants());
 
     GiNaC::ex res = resultant(f.polynomial, g.polynomial, variable);
     
@@ -384,7 +397,7 @@ GiNaC::numeric
 
 IntervalQ PolynomialQ::boundRange(const IntervalQ & interval) const
 {
-    assert(Invariant());
+    assert(Invariants());
 
     unsigned int d = degree();
     IntervalQ range(getCoeff(d));
@@ -496,10 +509,10 @@ void PolynomialQ::TestCompare(const PolynomialQ p,
 /*!
  * \detail This method checks that the internal state is free of errors. It is
  *         intended to be used only with 'assert' at the begining of its
- *         methods ( assert(Invariant()); ).
- * \todo Add check for irreducibility.
+ *         methods ( assert(Invariants()); ).
+ * \todo Lookup how to get the set of symbols in an expression.
  */
-bool PolynomialQ::Invariant() const
+bool PolynomialQ::Invariants() const
 {
     using namespace GiNaC;
 
@@ -568,12 +581,12 @@ std::ostream & operator<<(std::ostream & output, const PolynomialQ & p)
  */
 PolynomialQ & PolynomialQ::operator+=(const PolynomialQ & rhs)
 {
-	assert(Invariant());
-	assert(rhs.Invariant());
+	assert(Invariants());
+	assert(rhs.Invariants());
 
 	polynomial += rhs.polynomial;
 
-	assert(Invariant());
+	assert(Invariants());
 
 	return *this;
 }
@@ -583,12 +596,12 @@ PolynomialQ & PolynomialQ::operator+=(const PolynomialQ & rhs)
  */
 PolynomialQ & PolynomialQ::operator-=(const PolynomialQ & rhs)
 {
-	assert(Invariant());
-	assert(rhs.Invariant());
+	assert(Invariants());
+	assert(rhs.Invariants());
 
 	polynomial -= rhs.polynomial;
 
-	assert(Invariant());
+	assert(Invariants());
 
 	return *this;
 }
@@ -598,48 +611,48 @@ PolynomialQ & PolynomialQ::operator-=(const PolynomialQ & rhs)
  */
 PolynomialQ & PolynomialQ::operator*=(const PolynomialQ & rhs)
 {
-	assert(Invariant());
-	assert(rhs.Invariant());
+	assert(Invariants());
+	assert(rhs.Invariants());
 
 	polynomial = expand(polynomial * rhs.polynomial); // need to figure out 'expand'
 
-	assert(Invariant());
+	assert(Invariants());
 
 	return *this;
 }
 
 PolynomialQ & PolynomialQ::operator/=(const PolynomialQ & rhs)
 {
-    assert(Invariant());
-    assert(rhs.Invariant());
+    assert(Invariants());
+    assert(rhs.Invariants());
 
     polynomial = quo(polynomial, rhs.polynomial, variable);
 
-    assert(Invariant());
+    assert(Invariants());
 
     return *this;
 }
 
 PolynomialQ operator+(const PolynomialQ & lhs, const PolynomialQ & rhs)
 {
-	assert(lhs.Invariant());
-	assert(rhs.Invariant());
+	assert(lhs.Invariants());
+	assert(rhs.Invariants());
 
 	return PolynomialQ(lhs.polynomial + rhs.polynomial);
 }
 
 PolynomialQ operator-(const PolynomialQ & lhs, const PolynomialQ & rhs)
 {
-	assert(lhs.Invariant());
-	assert(rhs.Invariant());
+	assert(lhs.Invariants());
+	assert(rhs.Invariants());
 
 	return PolynomialQ(lhs.polynomial - rhs.polynomial);
 }
 
 PolynomialQ operator*(const PolynomialQ & lhs, const PolynomialQ & rhs)
 {
-	assert(lhs.Invariant());
-	assert(rhs.Invariant());
+	assert(lhs.Invariants());
+	assert(rhs.Invariants());
 
     // need to figure out 'expand'
 	return PolynomialQ(expand(lhs.polynomial * rhs.polynomial));
@@ -647,8 +660,8 @@ PolynomialQ operator*(const PolynomialQ & lhs, const PolynomialQ & rhs)
 
 PolynomialQ operator/(const PolynomialQ & lhs, const PolynomialQ & rhs)
 {
-    assert(lhs.Invariant());
-    assert(rhs.Invariant());
+    assert(lhs.Invariants());
+    assert(rhs.Invariants());
 
     return PolynomialQ(quo(lhs.polynomial,
                            rhs.polynomial,
@@ -657,8 +670,8 @@ PolynomialQ operator/(const PolynomialQ & lhs, const PolynomialQ & rhs)
 
 PolynomialQ operator%(const PolynomialQ & lhs, const PolynomialQ & rhs)
 {
-    assert(lhs.Invariant());
-    assert(rhs.Invariant());
+    assert(lhs.Invariants());
+    assert(rhs.Invariants());
 
     return PolynomialQ(rem(lhs.polynomial,
                            rhs.polynomial,
@@ -667,7 +680,7 @@ PolynomialQ operator%(const PolynomialQ & lhs, const PolynomialQ & rhs)
 
 PolynomialQ operator*(const PolynomialQ & lhs, const GiNaC::numeric & num)
 {
-    assert(lhs.Invariant());
+    assert(lhs.Invariants());
     assert(num.is_rational());
 
     return lhs.polynomial*(GiNaC::ex)num; // will convert
@@ -675,7 +688,7 @@ PolynomialQ operator*(const PolynomialQ & lhs, const GiNaC::numeric & num)
 
 PolynomialQ operator/(const PolynomialQ & lhs, const GiNaC::numeric & num)
 {
-    assert(lhs.Invariant());
+    assert(lhs.Invariants());
     assert(num.is_rational());
 
     return lhs.polynomial/(GiNaC::ex)num; // rely on GiNaC throwing an exception

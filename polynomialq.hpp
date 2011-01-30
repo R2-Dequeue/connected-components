@@ -44,8 +44,10 @@ public:
 	inline bool isMonic() const; //!< True iff the leading coefficient is 1.
 	inline bool isZero() const; //!< True iff the polynomial is '0'.
 	bool isIrreducible() const;
+	inline bool isConstant() const;
 
 	inline GiNaC::symbol getVariable() const { return variable; }
+	inline GiNaC::ex getEx() const;
 
     GiNaC::numeric getCoeff(const unsigned int i) const;
 
@@ -61,8 +63,6 @@ public:
     int signAt(const Algebraic & a) const;
 	GiNaC::numeric eval(const GiNaC::numeric & value) const;
 	//!< Returns the value of the polynomial at 'value'.
-
-	inline GiNaC::ex getEx() const;
 
 	static std::vector<PolynomialQ>
         IrreducibleFactors(const std::vector<PolynomialQ> & F);
@@ -84,7 +84,7 @@ public:
      * \brief Helper method for internal 'assert' checks.
      * \detail This method is public but shouldn't really be published.
      */
-	bool Invariant() const;
+	bool Invariants() const;
 
     friend PolynomialQ operator+(const PolynomialQ & lhs, const PolynomialQ & rhs);
     friend PolynomialQ operator-(const PolynomialQ & lhs, const PolynomialQ & rhs);
@@ -96,10 +96,10 @@ public:
     friend PolynomialQ operator/(const PolynomialQ & lhs, const GiNaC::numeric & num);
 
     friend inline bool operator==(const PolynomialQ & lhs, const PolynomialQ & rhs) {
-        assert(lhs.Invariant() && rhs.Invariant());
+        assert(lhs.Invariants() && rhs.Invariants());
         return (lhs.polynomial == rhs.polynomial); }
     friend inline bool operator!=(const PolynomialQ & lhs, const PolynomialQ & rhs) {
-        assert(lhs.Invariant() && rhs.Invariant());
+        assert(lhs.Invariants() && rhs.Invariants());
         return (lhs.polynomial != rhs.polynomial); }
 
     friend class PolynomialQQ;

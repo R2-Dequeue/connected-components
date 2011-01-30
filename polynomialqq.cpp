@@ -96,7 +96,7 @@ PolynomialQQ::PolynomialQQ(const char * const s)
     // reader(s).expand(); ?
     polynomial = reader(s); // throws an exception if parsing fails
 
-    if (!Invariant())
+    if (!Invariants())
         throw std::invalid_argument("Parsing of polynomial succeded, but the"
                                     "result is not canonical.");
 }
@@ -104,7 +104,7 @@ PolynomialQQ::PolynomialQQ(const char * const s)
 PolynomialQQ::PolynomialQQ(const GiNaC::ex & e)
     : polynomial(e)
 {
-    if (!Invariant())
+    if (!Invariants())
         throw std::invalid_argument("Parsing of polynomial succeded, but the"
                                     "result is not canonical.");
 }
@@ -112,7 +112,7 @@ PolynomialQQ::PolynomialQQ(const GiNaC::ex & e)
 PolynomialQQ::PolynomialQQ(const GiNaC::numeric & n)
     : polynomial(n)
 {
-    if (!Invariant())
+    if (!Invariants())
         throw std::invalid_argument("Parsing of polynomial succeded, but the"
                                     "result is not canonical.");
 }
@@ -122,12 +122,12 @@ PolynomialQQ::PolynomialQQ(const GiNaC::numeric & n)
  */
 PolynomialQQ & PolynomialQQ::operator+=(const PolynomialQQ & rhs)
 {
-	assert(Invariant());
-	assert(rhs.Invariant());
+	assert(Invariants());
+	assert(rhs.Invariants());
 
 	polynomial += rhs.polynomial;
 
-	assert(Invariant());
+	assert(Invariants());
 
 	return *this;
 }
@@ -137,12 +137,12 @@ PolynomialQQ & PolynomialQQ::operator+=(const PolynomialQQ & rhs)
  */
 PolynomialQQ & PolynomialQQ::operator-=(const PolynomialQQ & rhs)
 {
-	assert(Invariant());
-	assert(rhs.Invariant());
+	assert(Invariants());
+	assert(rhs.Invariants());
 
 	polynomial -= rhs.polynomial;
 
-	assert(Invariant());
+	assert(Invariants());
 
 	return *this;
 }
@@ -152,19 +152,19 @@ PolynomialQQ & PolynomialQQ::operator-=(const PolynomialQQ & rhs)
  */
 PolynomialQQ & PolynomialQQ::operator*=(const PolynomialQQ & rhs)
 {
-	assert(Invariant());
-	assert(rhs.Invariant());
+	assert(Invariants());
+	assert(rhs.Invariants());
 
 	polynomial = expand(polynomial * rhs.polynomial); // need to figure out 'expand'
 
-	assert(Invariant());
+	assert(Invariants());
 
 	return *this;
 }
 
 PolynomialQQ PolynomialQQ::getDerivative(unsigned int variable) const
 {
-    assert(Invariant());
+    assert(Invariants());
     assert(variable == 1 || variable == 2);
 
     if (variable != 1 && variable != 2)
@@ -179,7 +179,7 @@ PolynomialQQ PolynomialQQ::getDerivative(unsigned int variable) const
 
 PolynomialQQ & PolynomialQQ::differentiate(unsigned int variable)
 {
-    assert(Invariant());
+    assert(Invariants());
     assert(variable == 1 || variable == 2);
 
     if (variable != 1 && variable != 2)
@@ -192,7 +192,7 @@ PolynomialQQ & PolynomialQQ::differentiate(unsigned int variable)
 
 std::vector<PolynomialQQ> PolynomialQQ::getIrreducibleFactors() const
 {
-    assert(Invariant());
+    assert(Invariants());
 
     GiNaC::ex p = factor(polynomial);
 
@@ -209,7 +209,7 @@ std::vector<PolynomialQQ> PolynomialQQ::getIrreducibleFactors() const
 
 int PolynomialQQ::signAt(const Algebraic & alpha, const Algebraic & beta) const
 {
-    assert(Invariant());
+    assert(Invariants());
 
     boost::tuple<Algebraic, PolynomialQ, PolynomialQ> t =
         PolynomialQQ::Simple(alpha, beta);
@@ -246,7 +246,7 @@ std::vector<PolynomialQQ>
                                  PolynomialQQ(GiNaC::numeric(1)),
                                  std::multiplies<PolynomialQQ>());
 
-    assert(fp.Invariant()); // isn't this redundant?
+    assert(fp.Invariants()); // isn't this redundant?
 
     GiNaC::ex p = factor(fp.polynomial);
 
@@ -265,8 +265,8 @@ PolynomialQ PolynomialQQ::Resultant(const PolynomialQQ & f,
                                     const PolynomialQQ & g,
                                     unsigned int var)
 {
-    assert(f.Invariant());
-    assert(g.Invariant());
+    assert(f.Invariants());
+    assert(g.Invariants());
     assert(var == 1 || var == 2);
 
     if (var != 1 && var != 2)
@@ -280,7 +280,7 @@ PolynomialQ PolynomialQQ::Resultant(const PolynomialQQ & f,
         res = res.subs(var2 == var1);
 
     return PolynomialQ(res); // Hoping constructor will be called and check
-                             // Invariant().
+                             // Invariants().
 }
 
 /*!
@@ -299,8 +299,8 @@ PolynomialQ Subresultant(const PolynomialQQ & f,
     int m = f.degree();
     int n = g.degree();
 
-    assert(f.Invariant());
-    assert(g.Invariant());
+    assert(f.Invariants());
+    assert(g.Invariants());
 
     if (k > min(m, n))
         throw std::invalid_argument("Subresultant: k is out of bounds.");
@@ -332,7 +332,7 @@ PolynomialQ Subresultant(const PolynomialQQ & f,
     return M.determinant();
 }*/
 
-bool PolynomialQQ::Invariant() const
+bool PolynomialQQ::Invariants() const
 {
     using namespace GiNaC;
 
@@ -382,15 +382,15 @@ bool PolynomialQQ::Invariant() const
 }
 
 PolynomialQQ PolynomialQQ::operator+(const PolynomialQQ & rhs) const {
-	assert(Invariant() && rhs.Invariant());
+	assert(Invariants() && rhs.Invariants());
 	return PolynomialQQ(polynomial + rhs.polynomial);
 }
 PolynomialQQ PolynomialQQ::operator-(const PolynomialQQ & rhs) const {
-	assert(Invariant() && rhs.Invariant());
+	assert(Invariants() && rhs.Invariants());
 	return PolynomialQQ(polynomial - rhs.polynomial);
 }
 PolynomialQQ PolynomialQQ::operator*(const PolynomialQQ & rhs) const {
-	assert(Invariant() && rhs.Invariant());
+	assert(Invariants() && rhs.Invariants());
 	return PolynomialQQ(expand(polynomial * rhs.polynomial));
 }
 
