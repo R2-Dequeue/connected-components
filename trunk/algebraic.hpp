@@ -27,8 +27,14 @@ class Algebraic
 {
 private:
 
-    PolynomialQ polynomial; //!< Irreducible polynomial.
-    IntervalQ rootinterval; //!< The interval that contains this number.
+	/*!
+     * \brief The polynomial that has as one of its roots this number.
+     * \detail The polynomial is always monic, irreducible, and non-constant
+     *		   with rational coefficients.
+     */
+    PolynomialQ polynomial;
+    //! The interval that contains this number with rational endpoints.
+    IntervalQ rootinterval;
 
 public:
 
@@ -38,11 +44,11 @@ public:
 
     //! Basic constructor to assemble an algebraic number.
     Algebraic(const PolynomialQ & p, const IntervalQ & i)
-        : polynomial(p), rootinterval(i) { assert(Invariant()); };
+        : polynomial(p), rootinterval(i) { assert(Invariants()); };
 
     //Algebraic(const GiNaC::numeric & n)
     //    : polynomial(PolynomialQ::variable - n), interval(n)
-    //    { assert(Invariant()); }
+    //    { assert(Invariants()); }
 
     // can I make a constructor that will only take STATIC ints or longs?
     // (for initialization).
@@ -65,7 +71,7 @@ public:
      * \brief Helper method for internal 'assert' checks.
      * \detail This method is public but shouldn't really be published.
      */
-	bool Invariant() const;
+	bool Invariants() const;
 
 	inline bool operator==(const Algebraic & b) { return (Compare(b) == 0); }
     inline bool operator!=(const Algebraic & b) { return (Compare(b) != 0); }

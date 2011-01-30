@@ -49,27 +49,27 @@ CAD::CAD(const std::list<std::string> & F)
     }
 
     // maybe this should be an assert?
-    if (!Invariant())
+    if (!Invariants())
         throw logic_error("CAD Constructor: CAD creation completed, but the"
                           "result is not canonical.");
 }
 
 bool CAD::Connectivity(const Point & p1, const Point & p2) const
 {
-    assert(Invariant());
+    assert(Invariants());
 
     return (M[CellNumber(Cell(p1))][CellNumber(Cell(p2))] == 1);
 }
 
 CellIndex CAD::Cell(const Point & p) const
 {
-    assert(Invariant());
+    assert(Invariants());
 }
 
 unsigned int CAD::CellNumber(const CellIndex & i) const
 {
     // Indices start at 0, not 1.
-    assert(Invariant());
+    assert(Invariants());
     assert(i.first < stacks.size());
     assert(i.second < stacks[i.first].size());
 
@@ -83,7 +83,7 @@ unsigned int CAD::CellNumber(const CellIndex & i) const
     return num;
 }
 
-bool CAD::Invariant() const
+bool CAD::Invariants() const
 {
     if (this == NULL)
         return false;
@@ -101,7 +101,7 @@ bool CAD::Invariant() const
     BOOST_FOREACH(const std::vector<Sample> & stack, stacks)
         BOOST_FOREACH(const Sample & sample, stack)
         {
-            if (!sample.x.Invariant() || !sample.y.Invariant())
+            if (!sample.x.Invariants() || !sample.y.Invariants())
                 return false;
 
             if (sample.signs != -1 &&
@@ -178,7 +178,7 @@ CellIndex CAD::BranchCount(const CellIndex & ci)
 
 void CAD::AdjacencyLeft(const unsigned int k)
 {
-    assert(Invariant());
+    assert(Invariants());
     assert(k < stacks.size());
     assert(isOdd(k)); // Uses a private helper method.
 

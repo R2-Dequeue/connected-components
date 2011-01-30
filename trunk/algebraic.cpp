@@ -9,14 +9,14 @@
 
 inline GiNaC::numeric Algebraic::lower() const
 {
-    assert(Invariant());
+    assert(Invariants());
 
     return rootinterval.lower();
 }
 
 inline GiNaC::numeric Algebraic::upper() const
 {
-    assert(Invariant());
+    assert(Invariants());
 
     return rootinterval.upper();
 }
@@ -29,7 +29,7 @@ inline GiNaC::numeric Algebraic::upper() const
  */
 int Algebraic::Compare(const Algebraic & B) const
 {
-    assert(Invariant());
+    assert(Invariants());
 
     Algebraic a(*this), b(B);
 
@@ -69,7 +69,7 @@ int Algebraic::Compare(const Algebraic & B) const
 
 Algebraic & Algebraic::tightenInterval()
 {
-    assert(Invariant());
+    assert(Invariants());
 
     const GiNaC::numeric l = rootinterval.lower(),
                          u = rootinterval.upper(); // invoke copy cons?
@@ -94,13 +94,15 @@ Algebraic & Algebraic::tightenInterval()
 /*!
  * \detail Uses Newton's method to find a floating point approximation of the
  *         algebraic number.
+ * \todo Double check that the max degree of an irreducible polynomial over
+ *		 the rationals is 2.
  */
 double Algebraic::Approximate() const
 {
-    assert(Invariant());
+    assert(Invariants());
 }
 
-bool Algebraic::Invariant() const
+bool Algebraic::Invariants() const
 {
     if (this == NULL)
         return false;
@@ -118,10 +120,18 @@ bool Algebraic::Invariant() const
 
     // Polynomial checks //////////////////////////////////////////////////////
 
-    if (!polynomial.Invariant())
+    if (!polynomial.Invariants())
         return false;
     
+    // Can a non-monic polynomial be irreducible?
+    
     if (!polynomial.isIrreducible())
+    	return false;
+    
+    if (polynomial.isConstant())
+    	return false;
+    
+    if (!polynomial.isMonic())
     	return false;
 
     return true;
@@ -133,8 +143,8 @@ bool Algebraic::Invariant() const
  */
 void Algebraic::SeparateIntervals(Algebraic & a, Algebraic & b)
 {
-    assert(a.Invariant());
-    assert(b.Invariant());
+    assert(a.Invariants());
+    assert(b.Invariants());
 
     while ( !(a.upper() < b.lower() || b.upper() < a.lower()) )
     {
