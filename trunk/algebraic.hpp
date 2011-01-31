@@ -46,10 +46,6 @@ public:
     Algebraic(const PolynomialQ & p, const IntervalQ & i)
         : polynomial(p), rootinterval(i) { assert(Invariants()); };
 
-    //Algebraic(const GiNaC::numeric & n)
-    //    : polynomial(PolynomialQ::variable - n), interval(n)
-    //    { assert(Invariants()); }
-
     // can I make a constructor that will only take STATIC ints or longs?
     // (for initialization).
 
@@ -60,7 +56,7 @@ public:
     inline GiNaC::ex getEx() const { return polynomial.getEx(); }
     inline PolynomialQ getPolynomial() const { return polynomial; }
 
-    int Compare(const Algebraic & B) const; //!< Compare this number with another.
+    int compare(const Algebraic & B) const; //!< Compare this number with another.
     Algebraic & tightenInterval(); //!< Shrinks the interval to a proper subset.
     double Approximate() const; //!< A floating point approximation of this number.
 
@@ -73,10 +69,11 @@ public:
      */
 	bool Invariants() const;
 
-	inline bool operator==(const Algebraic & b) { return (Compare(b) == 0); }
-    inline bool operator!=(const Algebraic & b) { return (Compare(b) != 0); }
+	inline bool operator==(const Algebraic & b) { return (compare(b) == 0); }
+    inline bool operator!=(const Algebraic & b) { return (compare(b) != 0); }
 
 	friend class PolynomialQ;
+	friend inline bool operator<(const Algebraic & alpha, const Algebraic & beta);
 };
 
 //Algebraic operator+(const Algebraic & lhs, const Algebraic & rhs);

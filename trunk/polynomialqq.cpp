@@ -14,107 +14,91 @@
 
 #include <boost/foreach.hpp>
 
-#include <boost/numeric/ublas/matrix.hpp>
+//#include <boost/numeric/ublas/matrix.hpp>
 
 const GiNaC::symbol & PolynomialQQ::var1 = PolynomialBase::var1;
 const GiNaC::symbol & PolynomialQQ::var2 = PolynomialBase::var2;
 
 PolynomialQQ::PolynomialQQ(const std::string & s)
 {
-    using namespace GiNaC;
-
-    symtab table;
-
-    table[var1.get_name()] = var1;
-    table[var2.get_name()] = var2;
-
-    parser reader(table);
-
-    // parser.strict = true; // must be a typo int the tutorial
-    reader.strict = true;
-
-    // reader(s).expand(); ?
-    polynomial = reader(s); // throws an exception if parsing fails
-
-    if (!polynomial.is_polynomial(lst(var1, var2)))
-        throw std::invalid_argument(
-        "GiNaC parsing suceeded, but result is not a polynomial in "
-        + var1.get_name() + ", " + var2.get_name() + ".");
-
-    if (!polynomial.info(info_flags::rational_polynomial))
-        throw std::invalid_argument(
-        "GiNaC parsing suceeded, but the result is not a rational polynomial.");
-
-    //if (polynomial == ex()) // should always be at least 'ex(0)'.
-    //    return false;
-
-    std::string outString("GiNaC parsing suceeded, but there is a problem with the coefficients.");
-
-    int deg1 = polynomial.degree(var1);
-
-    for (int i = 0; i <= deg1; i++)
-    {
-        ex p2 = polynomial.coeff(var1, i);
-
-        if (!p2.is_polynomial(var2))
-            throw std::invalid_argument(outString);
-
-        if (!p2.info(info_flags::rational_polynomial))
-            throw std::invalid_argument(outString);
-
-        int deg2 = p2.degree(var2);
-
-        for (int j = 0; j <= deg2; j++)
-        {
-            ex co = p2.coeff(var2, j);
-
-            if (is_a<numeric>(co))
-            {
-                numeric c = ex_to<numeric>(co);
-
-                if (!c.is_rational())
-                    throw std::invalid_argument(outString);
-            }
-            else
-                throw std::invalid_argument(outString);
-        }
-    }
+	polynomial = PolynomialQQ::ParseString(s);
+    
+    assert(Invariants());
 }
 
-PolynomialQQ::PolynomialQQ(const char * const s)
+PolynomialQQ::PolynomialQQ(const char * const a)
 {
-    GiNaC::symtab table;
-
-    table[var1.get_name()] = var1;
-    table[var2.get_name()] = var2;
-
-    GiNaC::parser reader(table);
-
-    // parser.strict = true; // must be a typo int the tutorial
-    reader.strict = true;
-
-    // reader(s).expand(); ?
-    polynomial = reader(s); // throws an exception if parsing fails
-
-    if (!Invariants())
-        throw std::invalid_argument("Parsing of polynomial succeded, but the"
-                                    "result is not canonical.");
+	std::string s(a);
+	
+    polynomial = PolynomialQQ::ParseString(s);
+    
+    assert(Invariants());
 }
 
 PolynomialQQ::PolynomialQQ(const GiNaC::ex & e)
     : polynomial(e)
 {
     if (!Invariants())
-        throw std::invalid_argument("Parsing of polynomial succeded, but the"
-                                    "result is not canonical.");
+        throw std::invalid_argument("PolynomialQQ Constructor: GiNaC expression"
+        							"e is not a valid polynomial.");
 }
 
 PolynomialQQ::PolynomialQQ(const GiNaC::numeric & n)
     : polynomial(n)
 {
     if (!Invariants())
-        throw std::invalid_argument("Parsing of polynomial succeded, but the"
-                                    "result is not canonical.");
+        throw std::invalid_argument("PolynomialQQ Constructor: GiNaC numeric"
+        							"n is not a valid rational number.");
+}
+
+inline int PolynomialQQ::degree() const
+{
+	assert(Invariants());
+
+	return polynomial.degree(variable);
+}
+
+inline bool PolynomialQQ::isMonic() const
+{
+	assert(Invariants());
+
+	return (polynomial.lcoeff(variable) == 1);
+}
+
+inline bool PolynomialQQ::isZero() const
+{
+	assert(Invariants());
+
+	return (polynomial.is_zero()); // (polynomial == 0);
+}
+
+bool PolynomialQQ::isIrreducible() const
+{
+	assert(Invariants());
+	
+	if (this->degree() > 2)
+		return false;
+	
+	// Assuming getIrreducibleFactors ignores constant factors.
+	if (this->getIrreducibleFactors().size() > 1)
+		return false;
+	
+	return true;
+}
+
+inline bool PolynomialQQ::isConstant() const
+{
+	// Ways to check if constant:
+	// 1) this->degree() == 0 (maybe add a check for -1 in case degree function
+	//						   changes behaviour in the future).
+	// 2) If the set of symbols in 'polynomial' is empty.
+	// 3) If lcoeff == tcoeff.
+	// 4) If GiNaC::is_a<GiNaC::numeric>(polynomial) is true.
+	
+	assert(Invariants());
+	
+	//return (this->degree() == 0 || this->degree() == -1);
+	return (GiNaC::is_a<GiNaC::numeric>(polynomial));
 }
 
 /*!
@@ -230,7 +214,7 @@ int PolynomialQQ::signAt(const Algebraic & alpha, const Algebraic & beta) const
 */
 }
 
-GiNaC::ex PolynomialQQ::getEx() const
+inline GiNaC::ex PolynomialQQ::getEx() const
 {
     GiNaC::ex temp(polynomial);
 
@@ -557,4 +541,25 @@ GiNaC::ex PolynomialQQ::sres(const GiNaC::ex & f,
  M   := <<Mf|Mfl>,<Mg|Mgl>>;
  return Determinant(M);
 */
+}
+
+/*!
+ * \detail Parses the string wrt the internal variables.
+ * \throws parse_error Thrown by GiNaC if parsing fails (inherits
+ *		   invalid_argument).
+ */
+inline PolynomialQQ PolynomialQQ::ParseString(const std::string & s) const
+{
+    GiNaC::symtab table;
+
+    table[var1.get_name()] = var1;
+    table[var2.get_name()] = var2;
+
+    GiNaC::parser reader(table); // reader(table, true);
+    reader.strict = true;
+
+    // reader(s).expand(); ?
+    PolynomialQQ p(reader(s)); // throws an exception if parsing fails.
+    
+    return p;
 }

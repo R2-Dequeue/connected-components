@@ -15,9 +15,9 @@ CAD::CAD(const std::list<std::string> & F)
     // Be careful with 'F' and 'this->F'.
 
     BOOST_FOREACH(const std::string & f, F)
-        this->F.push_back(PolynomialQQ(f)); // throws invalid_argument on error
+        this->F.push_back(PolynomialQQ(f)); // throws on error
 
-    samples = CAD::SamplePoints(PolynomialQ::FindRoots(Project()));
+    samples = CAD::SamplePoints(PolynomialQ::FindRoots(CAD::Project(this->F)));
     std::vector<Algebraic> & alphas = samples;
 
     stacks.reserve(alphas.size());
@@ -25,9 +25,9 @@ CAD::CAD(const std::list<std::string> & F)
     BOOST_FOREACH(const Algebraic & alpha, alphas)
     {
         std::vector<Algebraic> betas =
-            SamplePoints(CAD::FindRoots2(alpha, this->F));
+            CAD::SamplePoints(CAD::FindRoots2(alpha, this->F));
 
-        stacks.push_back(std::vector<Sample>());
+        stacks.push_back(std::vector<Sample>()); // Should I name this parameter?
         std::vector<Sample> & T = stacks.back;
 
         T.reserve(betas.size());
@@ -39,7 +39,8 @@ CAD::CAD(const std::list<std::string> & F)
             numbers.push_back(alpha);
             numbers.push_back(beta);
 
-            std::vector<char> signs(this->F.size());
+            std::vector<char> signs(this->F.size()); // allocates 'size' of
+            										 // these up front.
 
             for (int i = 0; i < this->F.size(); i++)
                 signs[i] = Sign(numbers, (this->F)[i]);
@@ -290,6 +291,9 @@ inline PolynomialQ CAD::MakePoly(const GiNaC::numeric & num)
 	return PolynomialQ(GiNaC::ex(p.getVar() - num));
 }
 
+/*!
+ * \param F Should not contain 0 polynomials; this 
+ */
 std::vector<Algebraic>
     CAD::FindRoots2(const Algebraic & alpha,
     				const std::vector<PolynomialQQ> & F)
@@ -300,6 +304,8 @@ std::vector<Algebraic>
     // or implement & use some mul(vector) method.
     BOOST_FOREACH(const PolynomialQQ & f, F)
         fs *= f;
+    
+    assert(!fs.isZero());
 
     // make a conversion operator from PolyQ to PolyQQ for alpha.
     // maybe PolynomialQ::getPolynomialQQ?
