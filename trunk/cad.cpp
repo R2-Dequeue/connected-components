@@ -42,7 +42,7 @@ CAD::CAD(const std::list<std::string> & F)
             std::vector<char> signs(this->F.size()); // allocates 'size' of
             										 // these up front.
 
-            for (int i = 0; i < this->F.size(); i++)
+            for (unsigned int i = 0; i < this->F.size(); i++)
                 signs[i] = Sign(numbers, (this->F)[i]);
 
             T.push_back(Sample(beta, signs));
@@ -309,7 +309,8 @@ std::vector<Algebraic>
 
     // make a conversion operator from PolyQ to PolyQQ for alpha.
     // maybe PolynomialQ::getPolynomialQQ?
-    PolynomialQ r = PolynomialQQ::Resultant(alpha.getPolynomial(), fs, 1);
+    PolynomialQ r = PolynomialQQ::Resultant(PolynomialQQ(alpha.getPolynomial().getEx()),
+    										fs, 1);
 
     std::vector<Algebraic> P = PolynomialQ::FindRoots(r.getIrreducibleFactors());
     std::vector<Algebraic> R;
