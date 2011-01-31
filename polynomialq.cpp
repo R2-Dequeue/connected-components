@@ -96,7 +96,7 @@ inline bool PolynomialQ::isZero() const
 {
 	assert(Invariants());
 
-	return (polynomial == 0);
+	return (polynomial.is_zero()); // (polynomial == 0);
 }
 
 bool PolynomialQ::isIrreducible() const
@@ -120,10 +120,12 @@ inline bool PolynomialQ::isConstant() const
 	//						   changes behaviour in the future).
 	// 2) If the set of symbols in 'polynomial' is empty.
 	// 3) If lcoeff == tcoeff.
+	// 4) If GiNaC::is_a<GiNaC::numeric>(polynomial) is true.
 	
 	assert(Invariants());
 	
-	return (this->degree() == 0 || this->degree() == -1);
+	//return (this->degree() == 0 || this->degree() == -1);
+	return (GiNaC::is_a<GiNaC::numeric>(polynomial));
 }
 
 /*!
@@ -198,11 +200,12 @@ inline PolynomialQ & PolynomialQ::differentiate()
 }
 
 /*!
- * \detail Returns a vector containing the unique irreducible factors of the
- *         polynomial.
- * \return Each element should only appear once.
+ * \detail Returns the factors of the polynomial in a vector.
+ * \return Each factor appears only once (multiplicities are ignored). Each
+ *		   factor is monic, irreducible, and not a constant.
  * \todo Add more error checking and experiment with 'factor(GiNaC::ex)'.
  *		 How does 'factor' handle constant factors?
+ * \todo Use a set and a comparison function.
  */
 std::vector<PolynomialQ> PolynomialQ::getIrreducibleFactors() const
 {
@@ -210,13 +213,31 @@ std::vector<PolynomialQ> PolynomialQ::getIrreducibleFactors() const
 
     GiNaC::ex p = factor(polynomial);
 
-    std::vector<PolynomialQ> factors;
+    std::vector<PolynomialQ> factors; // Make a comparison function and change
+    								  // this to use a set.
 
     for (GiNaC::const_iterator i = p.begin(); i != p.end(); i++)
-        factors.push_back(PolynomialQ(GiNaC::is_a<GiNaC::power>(*i) ?
-                                      (*i).op(0) :
-                                      *i));
+    {
         // The PolyQ constructor will throw if the ex is not a valid poly.
+        
+        if (GiNaC::is_a<GiNaC::numeric>(*i))
+        {
+        	// do nothing
+        	continue;
+        }
+        else if (GiNaC::is_a<GiNaC::power>(*i))
+        {
+        	PolynomialQ p((*i).op(0));
+        	
+        	factors.push_back(p.getMonic());
+        }
+        else
+        {
+        	PolynomialQ p(*i);
+        	
+        	factors.push_back(p.getMonic());
+        }
+	}
 
     return factors;
 }
@@ -263,7 +284,7 @@ GiNaC::numeric PolynomialQ::eval(const GiNaC::numeric & value) const
 {
     assert(Invariants());
     
-    if (!GiNaC::is_a<GiNaC::numeric>(value))
+    if (!value.is_rational())
     	throw std::invalid_argument("PolynomialQ::eval: value passed is not"
     								"rational.");
 
@@ -281,6 +302,7 @@ GiNaC::numeric PolynomialQ::eval(const GiNaC::numeric & value) const
  *		   returned vector are unique; multiple roots or roots that appear in
  *		   more than one polynomial are represented only once.
  * \todo Find resource (preferably consice) for exceptions thrown by the STL.
+ * \todo Optimize by replacing the call to SeparateIntervals with custom code.
  */
 std::vector<Algebraic> PolynomialQ::FindRoots(const std::vector<PolynomialQ> P)
 {
@@ -309,13 +331,17 @@ std::vector<Algebraic> PolynomialQ::FindRoots(const std::vector<PolynomialQ> P)
 
                 if (number.is_rational())
                 {
-                    Algebraic a(f, IntervalQ(number));
-                    numberSet.insert(a);
+                    Algebraic alpha(f, IntervalQ(number));
+                    numberSet.insert(alpha);
                     continue;
                 }
             }
 
             throw std::runtime_error();
+            
+            GiNaC::numeric root = -f.coeff(0)/f.coeff(1);
+            Algebraic alpha(f, IntervalQ(root, root));
+            numberSet.insert(alpha);
 
             /*
             GiNaC::ex numberEx = GiNaC::lsolve(f.getEx() == 0, f.getVar());
@@ -324,22 +350,40 @@ std::vector<Algebraic> PolynomialQ::FindRoots(const std::vector<PolynomialQ> P)
             if (!number.is_rational())
                 throw std::runtime_error();
 
-            Algebraic a(f, IntervalQ(number));
-            numberSet.insert(a);
+            Algebraic alpha(f, IntervalQ(number));
+            numberSet.insert(alpha);
             continue;
             */
         }
         else (f.degree() == 2)
         {
-            // Check for complex roots
-            // \sqrt{b^2-4ac}; or if a=1, \sqrt{b^2-4c}
-            GiNaC::numeric discriminant = f.coeff(1)^2 - 4*f.coeff(2)*f.coeff(0);
+        	// Know that f.coeff(2) != 0.
+            GiNaC::numeric a = f.coeff(2);
+            GiNaC::numeric b = f.coeff(1) / a;
+            GiNaC::numeric c = f.coeff(0) / a;
+            GiNaC::numeric discriminant = b^2 - 4*c;
 
-            if (discriminant >= 0) // ==> We have real roots.
+            if (discriminant > 0) // ==> We have real roots.
             {
-                // Know that f.coeff(2) != 0.
-                GiNaC::numeric left = -f.coeff(1)/(f.coeff(2)*2);
-                GiNaC::numeric right = GiNaC::sqrt(discriminant)/(f.coeff(2)*2);
+                GiNaC::numeric left = -b/2;
+                GiNaC::numeric right = GiNaC::sqrt(discriminant) / 2;
+                // Note: the above is always > 0.
+                
+                Algebraic alpha(f/a, IntervalQ( left 		, left+right	));
+                Algebraic beta (f/a, IntervalQ( left-right	, left			));
+                
+                Algebraic::SeparateIntervals(alpha, beta);
+                
+                numberSet.insert(alpha);
+                numberSet.insert(beta);
+            }
+            else if (discriminant == 0) // ==> Just one (real) root.
+            {
+            	GiNaC::numeric root = -b/2; // This is rational, so no more
+            								// work needed.
+            	Algebraic alpha(f.getVar() - root, IntervalQ(root , root));
+            	
+            	numberSet.insert(alpha);
             }
         }
         else
@@ -356,21 +400,22 @@ std::vector<Algebraic> PolynomialQ::FindRoots(const std::vector<PolynomialQ> P)
 }
 
 /*!
- * \detail Returns a vector of unique irreducible factors of the polynomials
- *         in F.
- * \return Each element should only appear once.
- * \todo Add more error checking and handle zero-polynomials.
- *		 Also, decide how to handle constant factors of polynomials.
+ * \detail Returns the factors of the polynomials in F in a vector.
+ * \param F A list of non-zero polynomials. Constant polynomials will not
+ *			contribute anything to the output.
+ * \return Each factor appears only once (multiplicities and common roots are
+ *		   ignored). Each factor is monic, irreducible, and not a constant.
  */
 std::vector<PolynomialQ>
     PolynomialQ::IrreducibleFactors(const std::vector<PolynomialQ> & F)
 {
-    // remove '0' polynomials? Monic check?
+    // remove '0' polynomials?
+    // Probably faster to get factors separately and merge.
     PolynomialQ fp = accumulate(F.begin(),
                                 F.end(),
-                                PolynomialQ((GiNaC::numeric)1),
+                                PolynomialQ((GiNaC::ex)1),
                                 std::multiplies<PolynomialQ>());
-    // implement PolynomialQ.mul(set)?
+    // implement PolynomialQ::mul(set)?
 
     return p.getIrreducibleFactors();
 }
@@ -553,7 +598,7 @@ bool PolynomialQ::Invariants() const
  *		   invalid_argument).
  * \todo Report 'parser.strict' typo in the tutorial.
  */
-inline PolynomialQ PolynomialQ::ParseString(const std::string & s)
+inline PolynomialQ PolynomialQ::ParseString(const std::string & s) const
 {
 	GiNaC::symtab table;
 

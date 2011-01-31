@@ -27,13 +27,13 @@ inline GiNaC::numeric Algebraic::upper() const
  *          0 if *this is equal to B.
  *          1 if *this is greater than B.
  */
-int Algebraic::Compare(const Algebraic & B) const
+int Algebraic::compare(const Algebraic & B) const
 {
     assert(Invariants());
 
     Algebraic a(*this), b(B);
 
-    if (a.polynomial != b.polynomial) // a.Compare(b) != 0, or !a.equalTo(b)
+    if (a.polynomial != b.polynomial) // a.compare(b) != 0, or !a.equalTo(b)
     {
         while (true)
         {
@@ -92,16 +92,44 @@ Algebraic & Algebraic::tightenInterval()
 }
 
 /*!
- * \detail Uses Newton's method to find a floating point approximation of the
- *         algebraic number.
  * \todo Double check that the max degree of an irreducible polynomial over
  *		 the rationals is 2.
  */
 double Algebraic::Approximate() const
 {
     assert(Invariants());
+    
+    double value;
+    
+    if (polynomial.degree() == 2)
+    {
+    	GiNaC::numeric a(polynomial.coeff(2));
+    	GiNaC::numeric b(polynomial.coeff(1));
+    	GiNaC::numeric c(polynomial.coeff(0));
+    	
+    	GiNaC::numeric rootplus = (-b + sqrt(b^2 - 4*a*c))/(2*a);
+    	
+    	if (rootinterval.lower() <= rootplus && rootplus <= rootinterval.upper())
+    		value = rootplus.to_double();
+    	else
+    		value = ( (-b - sqrt(b^2 - 4*a*c))/(2*a) ).to_double();
+    }
+    else
+    {
+    	// Assume polynomial.degree() == 1.
+    	
+    	GiNaC::numeric a(polynomial.coeff(1));
+    	GiNaC::numeric b(polynomial.coeff(0));
+    	
+    	value = (-b/a).to_double();
+    }
+    
+    return value;
 }
 
+/*!
+ * \todo Can a non-monic polynomial be irreducible?
+ */
 bool Algebraic::Invariants() const
 {
     if (this == NULL)
@@ -122,8 +150,6 @@ bool Algebraic::Invariants() const
 
     if (!polynomial.Invariants())
         return false;
-    
-    // Can a non-monic polynomial be irreducible?
     
     if (!polynomial.isIrreducible())
     	return false;
@@ -151,4 +177,11 @@ void Algebraic::SeparateIntervals(Algebraic & a, Algebraic & b)
         a.tightenInterval();
         b.tightenInterval();
     }
+}
+
+inline bool operator<(const Algebraic & alpha, const Algebraic & beta)
+{
+	assert(Invariants());
+	
+	return (alpha.compare(beta) == -1);
 }

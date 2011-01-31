@@ -110,7 +110,7 @@ protected:
     static void TestCompare(const PolynomialQ p,
                             const GiNaC::ex expected,
                             unsigned int & count);
-    static inline PolynomialQ ParseString(const std::string & s);
+    static inline PolynomialQ ParseString(const std::string & s) const;
 };
 
 std::ostream & operator<<(std::ostream & output, const PolynomialQ & p);

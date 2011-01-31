@@ -33,6 +33,7 @@ typedef pair<unsigned int, unsigned int> CellIndex;
  * \detail
  * \todo Maybe change to lists for internal private functions for fast
  *		 modifications.
+ * \todo Maybe template methods so they can take/return various containers?
  */
 class CAD
 {

@@ -16,6 +16,9 @@
 
 #include <boost/tuple/tuple.hpp>
 
+/*!
+ * \todo Add support for different orderings (lots of functions to add...).
+ */
 class PolynomialQQ
 {
 private:
@@ -28,9 +31,15 @@ public:
 
     PolynomialQQ() : polynomial(0) {} //!< The default constructor.
     PolynomialQQ(const std::string & s);
-    PolynomialQQ(const char * const s);
+    PolynomialQQ(const char * const a);
     PolynomialQQ(const GiNaC::ex & e);
 	PolynomialQQ(const GiNaC::numeric & n);
+	
+	inline int degree() const; //!< The degree of the polynomial.
+	inline bool isMonic() const; //!< True iff the leading coefficient is 1.
+	inline bool isZero() const; //!< True iff the polynomial is '0'.
+	bool isIrreducible() const;
+	inline bool isConstant() const;
 
     PolynomialQQ getDerivative(unsigned int variable) const;
     PolynomialQQ & differentiate(unsigned int variable);
@@ -39,7 +48,7 @@ public:
 
     int signAt(const Algebraic & alpha, const Algebraic & beta) const;
 
-    GiNaC::ex getEx() const;
+    inline GiNaC::ex getEx() const;
 
     static std::vector<PolynomialQQ>
         IrreducibleFactors(const std::vector<PolynomialQQ> & F);
@@ -86,6 +95,8 @@ protected:
                           const GiNaC::ex & g,
                           const int k,
                           const GiNaC::symbol & var);
+    
+    static inline PolynomialQQ ParseString(const std::string & s) const;
 };
 
 #endif // __POLYNOMIALQQ__
