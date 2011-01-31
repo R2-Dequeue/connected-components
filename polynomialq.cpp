@@ -298,19 +298,21 @@ GiNaC::numeric PolynomialQ::eval(const GiNaC::numeric & value) const
 }
 
 /*!
+ * \param P A vector of non-zero polynomials. Constant polynomials are valid,
+ *			but will not contribute anything to the output.
  * \return A vector of the roots of the polynomials in P.  The elements in the
  *		   returned vector are unique; multiple roots or roots that appear in
  *		   more than one polynomial are represented only once.
  * \todo Find resource (preferably consice) for exceptions thrown by the STL.
  * \todo Optimize by replacing the call to SeparateIntervals with custom code.
+ * \todo Check if GiNaC::numeric uses copy-on-write like GiNaC::ex.
  */
 std::vector<Algebraic> PolynomialQ::FindRoots(const std::vector<PolynomialQ> P)
 {
-    /*
-    How should I handle 0 or other constant polynomials?
-    */
     std::vector<PolynomialQ> factors = PolynomialQ::IrreducibleFactors(P);
-    std::set<Algebraic> numberSet; // Use this to sort alpebraic numbers.
+    std::set<Algebraic> numberSet; // Use this to sort the alpebraic numbers.
+    
+    // Assume all factors are monic (thanks to IrreducibleFactors).
 
     if (factors.size() == 1)
         if (factors[0].isConstant())
@@ -323,54 +325,26 @@ std::vector<Algebraic> PolynomialQ::FindRoots(const std::vector<PolynomialQ> P)
     {
         if (f.degree() == 1)
         {
-            GiNaC::ex numberEx = GiNaC::lsolve(f.getEx() == 0, f.getVar());
-
-            if (GiNaC::is_a<GiNaC::numeric>(numberEx))
-            {
-                GiNaC::numeric number = GiNaC::ex_to<GiNaC::numeric>(numberEx);
-
-                if (number.is_rational())
-                {
-                    Algebraic alpha(f, IntervalQ(number));
-                    numberSet.insert(alpha);
-                    continue;
-                }
-            }
-
-            throw std::runtime_error();
-            
-            GiNaC::numeric root = -f.coeff(0)/f.coeff(1);
+        	const GiNaC::numeric root = -f.coeff(0);
+        	
             Algebraic alpha(f, IntervalQ(root, root));
+            
             numberSet.insert(alpha);
-
-            /*
-            GiNaC::ex numberEx = GiNaC::lsolve(f.getEx() == 0, f.getVar());
-            GiNaC::numeric number = GiNaC::ex_to<GiNaC::numeric>(numberEx);
-
-            if (!number.is_rational())
-                throw std::runtime_error();
-
-            Algebraic alpha(f, IntervalQ(number));
-            numberSet.insert(alpha);
-            continue;
-            */
         }
-        else (f.degree() == 2)
+        else if (f.degree() == 2)
         {
-        	// Know that f.coeff(2) != 0.
-            GiNaC::numeric a = f.coeff(2);
-            GiNaC::numeric b = f.coeff(1) / a;
-            GiNaC::numeric c = f.coeff(0) / a;
-            GiNaC::numeric discriminant = b^2 - 4*c;
+            const GiNaC::numeric b = f.coeff(1);
+            const GiNaC::numeric c = f.coeff(0);
+            const GiNaC::numeric discriminant = b^2 - 4*c;
 
             if (discriminant > 0) // ==> We have real roots.
             {
-                GiNaC::numeric left = -b/2;
-                GiNaC::numeric right = GiNaC::sqrt(discriminant) / 2;
+                const GiNaC::numeric left = -b/2;
+                const GiNaC::numeric right = GiNaC::sqrt(discriminant) / 2;
                 // Note: the above is always > 0.
                 
-                Algebraic alpha(f/a, IntervalQ( left 		, left+right	));
-                Algebraic beta (f/a, IntervalQ( left-right	, left			));
+                Algebraic alpha(f, IntervalQ( left 		, left+right	));
+                Algebraic beta (f, IntervalQ( left-right	, left			));
                 
                 Algebraic::SeparateIntervals(alpha, beta);
                 
@@ -379,8 +353,8 @@ std::vector<Algebraic> PolynomialQ::FindRoots(const std::vector<PolynomialQ> P)
             }
             else if (discriminant == 0) // ==> Just one (real) root.
             {
-            	GiNaC::numeric root = -b/2; // This is rational, so no more
-            								// work needed.
+            	const GiNaC::numeric root = -b/2;
+            	
             	Algebraic alpha(f.getVar() - root, IntervalQ(root , root));
             	
             	numberSet.insert(alpha);
@@ -401,21 +375,22 @@ std::vector<Algebraic> PolynomialQ::FindRoots(const std::vector<PolynomialQ> P)
 
 /*!
  * \detail Returns the factors of the polynomials in F in a vector.
- * \param F A list of non-zero polynomials. Constant polynomials will not
- *			contribute anything to the output.
+ * \param F A vector of non-zero polynomials. Constant polynomials are valid,
+ *			but will not contribute anything to the output.
  * \return Each factor appears only once (multiplicities and common roots are
  *		   ignored). Each factor is monic, irreducible, and not a constant.
  */
 std::vector<PolynomialQ>
     PolynomialQ::IrreducibleFactors(const std::vector<PolynomialQ> & F)
 {
-    // remove '0' polynomials?
     // Probably faster to get factors separately and merge.
     PolynomialQ fp = accumulate(F.begin(),
                                 F.end(),
                                 PolynomialQ((GiNaC::ex)1),
                                 std::multiplies<PolynomialQ>());
     // implement PolynomialQ::mul(set)?
+    
+    assert(!fp.isZero());
 
     return p.getIrreducibleFactors();
 }
