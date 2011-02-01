@@ -33,7 +33,7 @@ const GiNaC::symbol & PolynomialQ::variable = PolynomialBase::var1;
  */
 PolynomialQ::PolynomialQ(const std::string & s)
 {
-    polynomial = PolynomialQ::ParseString(s);
+    polynomial = PolynomialQ::ParseString(s).polynomial;
 
     assert(Invariants());
 }
@@ -44,8 +44,8 @@ PolynomialQ::PolynomialQ(const std::string & s)
 PolynomialQ::PolynomialQ(const char * const a)
 {
 	std::string s(a);
-	
-	polynomial = PolynomialQ::ParseString(s);
+
+	polynomial = PolynomialQ::ParseString(s).polynomial;
 
     assert(Invariants());
 }
@@ -78,21 +78,21 @@ PolynomialQ::PolynomialQ(const GiNaC::numeric & n)
  *         that the degree of the polynomial '0' is 0 and not -1 as it is
  *         sometimes defined.
  */
-inline int PolynomialQ::degree() const
+int PolynomialQ::degree() const
 {
 	assert(Invariants());
 
 	return polynomial.degree(variable);
 }
 
-inline bool PolynomialQ::isMonic() const
+bool PolynomialQ::isMonic() const
 {
 	assert(Invariants());
 
 	return (polynomial.lcoeff(variable) == 1);
 }
 
-inline bool PolynomialQ::isZero() const
+bool PolynomialQ::isZero() const
 {
 	assert(Invariants());
 
@@ -102,18 +102,18 @@ inline bool PolynomialQ::isZero() const
 bool PolynomialQ::isIrreducible() const
 {
 	assert(Invariants());
-	
+
 	if (this->degree() > 2)
 		return false;
-	
+
 	// Assuming getIrreducibleFactors ignores constant factors.
 	if (this->getIrreducibleFactors().size() > 1)
 		return false;
-	
+
 	return true;
 }
 
-inline bool PolynomialQ::isConstant() const
+bool PolynomialQ::isConstant() const
 {
 	// Ways to check if constant:
 	// 1) this->degree() == 0 (maybe add a check for -1 in case degree function
@@ -121,9 +121,9 @@ inline bool PolynomialQ::isConstant() const
 	// 2) If the set of symbols in 'polynomial' is empty.
 	// 3) If lcoeff == tcoeff.
 	// 4) If GiNaC::is_a<GiNaC::numeric>(polynomial) is true.
-	
+
 	assert(Invariants());
-	
+
 	//return (this->degree() == 0 || this->degree() == -1);
 	return (GiNaC::is_a<GiNaC::numeric>(polynomial));
 }
@@ -147,7 +147,7 @@ GiNaC::numeric PolynomialQ::getCoeff(const unsigned int i) const
     return num;
 }
 
-inline PolynomialQ PolynomialQ::getMonic() const
+PolynomialQ PolynomialQ::getMonic() const
 {
     assert(Invariants());
 
@@ -162,21 +162,21 @@ inline PolynomialQ PolynomialQ::getMonic() const
  * \detail In the case that this is the zero polynomial, then this method
  *		   modifies nothing.
  */
-inline PolynomialQ & PolynomialQ::makeMonic()
+PolynomialQ & PolynomialQ::makeMonic()
 {
     assert(Invariants());
-    
+
     if (!this->isZero()) // ==> Leading coefficient is non-zero.
     {
     	polynomial = (polynomial / polynomial.lcoeff(variable)).expand();
-    	
+
     	assert(Invariants());
     }
 
     return *this;
 }
 
-inline PolynomialQ PolynomialQ::getDerivative() const
+PolynomialQ PolynomialQ::getDerivative() const
 {
     assert(Invariants());
 
@@ -190,13 +190,33 @@ inline PolynomialQ PolynomialQ::getDerivative() const
  * \detail Note that this modifies the polynomial object; this doesn't just
  *         return a new polynomial that is the derivative.
  */
-inline PolynomialQ & PolynomialQ::differentiate()
+PolynomialQ & PolynomialQ::differentiate()
 {
 	assert(Invariants());
 
     polynomial = polynomial.diff(variable);
 
 	return *this;
+}
+
+/*!
+ * \detail a must be less than b.
+ */
+unsigned int PolynomialQ::sturm(const GiNaC::numeric & a,
+                                const GiNaC::numeric & b) const
+{
+    PolynomialQ p2(*this);
+    PolynomialQ p1(this->getDerivative());
+
+    GiNaC::numeric a2 = p2.eval(a), b2 = p2.eval(b);
+    GiNaC::numeric a1 = p1.eval(a), b1 = p1.eval(b);
+
+
+    while (!p1.isZero())
+    {
+    }
+
+    return va - vb;
 }
 
 /*!
@@ -219,7 +239,7 @@ std::vector<PolynomialQ> PolynomialQ::getIrreducibleFactors() const
     for (GiNaC::const_iterator i = p.begin(); i != p.end(); i++)
     {
         // The PolyQ constructor will throw if the ex is not a valid poly.
-        
+
         if (GiNaC::is_a<GiNaC::numeric>(*i))
         {
         	// do nothing
@@ -228,25 +248,18 @@ std::vector<PolynomialQ> PolynomialQ::getIrreducibleFactors() const
         else if (GiNaC::is_a<GiNaC::power>(*i))
         {
         	PolynomialQ p((*i).op(0));
-        	
+
         	factors.push_back(p.getMonic());
         }
         else
         {
         	PolynomialQ p(*i);
-        	
+
         	factors.push_back(p.getMonic());
         }
 	}
 
     return factors;
-}
-
-inline GiNaC::ex PolynomialQ::getEx() const
-{
-    GiNaC::ex temp(polynomial);
-
-    return temp;
 }
 
 int PolynomialQ::signAt(const Algebraic & a) const
@@ -283,7 +296,7 @@ int PolynomialQ::signAt(const Algebraic & a) const
 GiNaC::numeric PolynomialQ::eval(const GiNaC::numeric & value) const
 {
     assert(Invariants());
-    
+
     if (!value.is_rational())
     	throw std::invalid_argument("PolynomialQ::eval: value passed is not"
     								"rational.");
@@ -311,7 +324,7 @@ std::vector<Algebraic> PolynomialQ::FindRoots(const std::vector<PolynomialQ> P)
 {
     std::vector<PolynomialQ> factors = PolynomialQ::IrreducibleFactors(P);
     std::set<Algebraic> numberSet; // Use this to sort the alpebraic numbers.
-    
+
     // Assume all factors are monic (thanks to IrreducibleFactors).
 
     if (factors.size() == 1)
@@ -325,38 +338,38 @@ std::vector<Algebraic> PolynomialQ::FindRoots(const std::vector<PolynomialQ> P)
     {
         if (f.degree() == 1)
         {
-        	const GiNaC::numeric root = -f.coeff(0);
-        	
+        	const GiNaC::numeric root = -f.getCoeff(0);
+
             Algebraic alpha(f, IntervalQ(root, root));
-            
+
             numberSet.insert(alpha);
         }
         else if (f.degree() == 2)
         {
-            const GiNaC::numeric b = f.coeff(1);
-            const GiNaC::numeric c = f.coeff(0);
-            const GiNaC::numeric discriminant = b^2 - 4*c;
+            const GiNaC::numeric b = f.getCoeff(1);
+            const GiNaC::numeric c = f.getCoeff(0);
+            const GiNaC::numeric discriminant = pow(b,(GiNaC::numeric)2) - 4*c;
 
             if (discriminant > 0) // ==> We have real roots.
             {
                 const GiNaC::numeric left = -b/2;
                 const GiNaC::numeric right = GiNaC::sqrt(discriminant) / 2;
                 // Note: the above is always > 0.
-                
+
                 Algebraic alpha(f, IntervalQ( left 		, left+right	));
                 Algebraic beta (f, IntervalQ( left-right	, left			));
-                
+
                 Algebraic::SeparateIntervals(alpha, beta);
-                
+
                 numberSet.insert(alpha);
                 numberSet.insert(beta);
             }
             else if (discriminant == 0) // ==> Just one (real) root.
             {
             	const GiNaC::numeric root = -b/2;
-            	
-            	Algebraic alpha(f.getVar() - root, IntervalQ(root , root));
-            	
+
+            	Algebraic alpha(f.getVariable() - root, IntervalQ(root , root));
+
             	numberSet.insert(alpha);
             }
         }
@@ -367,7 +380,7 @@ std::vector<Algebraic> PolynomialQ::FindRoots(const std::vector<PolynomialQ> P)
 
     std::vector<Algebraic> numbers(numberSet.begin(), numberSet.end());
 
-    for (int i = 0; i < numbers.size()-1; i++)
+    for (std::vector<Algebraic>::size_type i = 0; i < numbers.size()-1; i++)
         Algebraic::SeparateIntervals(numbers[i], numbers[i+1]);
 
     return numbers;
@@ -389,10 +402,10 @@ std::vector<PolynomialQ>
                                 PolynomialQ((GiNaC::ex)1),
                                 std::multiplies<PolynomialQ>());
     // implement PolynomialQ::mul(set)?
-    
+
     assert(!fp.isZero());
 
-    return p.getIrreducibleFactors();
+    return fp.getIrreducibleFactors();
 }
 
 /*!
@@ -405,11 +418,11 @@ GiNaC::numeric
     assert(g.Invariants());
 
     GiNaC::ex res = resultant(f.polynomial, g.polynomial, variable);
-    
+
     assert(GiNaC::is_a<GiNaC::numeric>(res));
-    
+
     GiNaC::numeric num = GiNaC::ex_to<GiNaC::numeric>(res);
-    
+
     assert(num.is_rational());
 
     return num;
@@ -573,7 +586,7 @@ bool PolynomialQ::Invariants() const
  *		   invalid_argument).
  * \todo Report 'parser.strict' typo in the tutorial.
  */
-inline PolynomialQ PolynomialQ::ParseString(const std::string & s) const
+PolynomialQ PolynomialQ::ParseString(const std::string & s) const
 {
 	GiNaC::symtab table;
 
@@ -585,7 +598,7 @@ inline PolynomialQ PolynomialQ::ParseString(const std::string & s) const
 
     // reader(s).expand(); ?
     PolynomialQ p(reader(s)); // throws an exception if parsing fails
-    
+
     return p;
 }
 

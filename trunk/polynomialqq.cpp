@@ -21,17 +21,17 @@ const GiNaC::symbol & PolynomialQQ::var2 = PolynomialBase::var2;
 
 PolynomialQQ::PolynomialQQ(const std::string & s)
 {
-	polynomial = PolynomialQQ::ParseString(s);
-    
+	polynomial = PolynomialQQ::ParseString(s).polynomial;
+
     assert(Invariants());
 }
 
 PolynomialQQ::PolynomialQQ(const char * const a)
 {
 	std::string s(a);
-	
-    polynomial = PolynomialQQ::ParseString(s);
-    
+
+    polynomial = PolynomialQQ::ParseString(s).polynomial;
+
     assert(Invariants());
 }
 
@@ -50,7 +50,7 @@ PolynomialQQ::PolynomialQQ(const GiNaC::numeric & n)
         throw std::invalid_argument("PolynomialQQ Constructor: GiNaC numeric"
         							"n is not a valid rational number.");
 }
-
+/*
 inline int PolynomialQQ::degree() const
 {
 	assert(Invariants());
@@ -64,28 +64,28 @@ inline bool PolynomialQQ::isMonic() const
 
 	return (polynomial.lcoeff(variable) == 1);
 }
-
+*/
 inline bool PolynomialQQ::isZero() const
 {
 	assert(Invariants());
 
 	return (polynomial.is_zero()); // (polynomial == 0);
 }
-
+/*
 bool PolynomialQQ::isIrreducible() const
 {
 	assert(Invariants());
-	
+
 	if (this->degree() > 2)
 		return false;
-	
+
 	// Assuming getIrreducibleFactors ignores constant factors.
 	if (this->getIrreducibleFactors().size() > 1)
 		return false;
-	
+
 	return true;
 }
-
+*/
 inline bool PolynomialQQ::isConstant() const
 {
 	// Ways to check if constant:
@@ -94,9 +94,9 @@ inline bool PolynomialQQ::isConstant() const
 	// 2) If the set of symbols in 'polynomial' is empty.
 	// 3) If lcoeff == tcoeff.
 	// 4) If GiNaC::is_a<GiNaC::numeric>(polynomial) is true.
-	
+
 	assert(Invariants());
-	
+
 	//return (this->degree() == 0 || this->degree() == -1);
 	return (GiNaC::is_a<GiNaC::numeric>(polynomial));
 }
@@ -462,9 +462,9 @@ boost::tuple<Algebraic, PolynomialQ, PolynomialQ>
 
         // s1 is now a polynomial in 'tmp'.
 
-        g = gcdex(gamma.getEx().subs(gamma.getVariable() ==, s1.coeff(tmp, 1))
+        //g = gcdex(gamma.getEx().subs(gamma.getPolynomial().getVariable() == s1.coeff(tmp, 1))
 
-        if (g.degree() == 0)
+        //if (g.degree() == 0)
             break;
 
         t++;
@@ -560,6 +560,6 @@ inline PolynomialQQ PolynomialQQ::ParseString(const std::string & s) const
 
     // reader(s).expand(); ?
     PolynomialQQ p(reader(s)); // throws an exception if parsing fails.
-    
+
     return p;
 }

@@ -49,8 +49,8 @@ public:
     // can I make a constructor that will only take STATIC ints or longs?
     // (for initialization).
 
-    inline GiNaC::numeric lower() const; //!< Returns the lower bound of the interval.
-    inline GiNaC::numeric upper() const; //!< Returns the upper bound of the interval.
+    GiNaC::numeric lower() const; //!< Returns the lower bound of the interval.
+    GiNaC::numeric upper() const; //!< Returns the upper bound of the interval.
 
     inline IntervalQ getInterval() const { return IntervalQ(rootinterval); }
     inline GiNaC::ex getEx() const { return polynomial.getEx(); }
@@ -73,8 +73,10 @@ public:
     inline bool operator!=(const Algebraic & b) { return (compare(b) != 0); }
 
 	friend class PolynomialQ;
-	friend inline bool operator<(const Algebraic & alpha, const Algebraic & beta);
 };
+
+inline bool operator<(const Algebraic & alpha, const Algebraic & beta)
+    { return (alpha.compare(beta) == -1); }
 
 //Algebraic operator+(const Algebraic & lhs, const Algebraic & rhs);
 //Algebraic operator-(const Algebraic & lhs, const Algebraic & rhs);

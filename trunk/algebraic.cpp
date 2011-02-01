@@ -98,32 +98,31 @@ Algebraic & Algebraic::tightenInterval()
 double Algebraic::Approximate() const
 {
     assert(Invariants());
-    
+
     double value;
-    
+
     if (polynomial.degree() == 2)
     {
-    	GiNaC::numeric a(polynomial.coeff(2));
-    	GiNaC::numeric b(polynomial.coeff(1));
-    	GiNaC::numeric c(polynomial.coeff(0));
-    	
-    	GiNaC::numeric rootplus = (-b + sqrt(b^2 - 4*a*c))/(2*a);
-    	
+    	GiNaC::numeric b(polynomial.getCoeff(1));
+    	GiNaC::numeric c(polynomial.getCoeff(0));
+
+    	GiNaC::numeric rootplus = (-b + sqrt(pow(b,(GiNaC::numeric)2) - 4*c))/2;
+
     	if (rootinterval.lower() <= rootplus && rootplus <= rootinterval.upper())
     		value = rootplus.to_double();
     	else
-    		value = ( (-b - sqrt(b^2 - 4*a*c))/(2*a) ).to_double();
+    		value = ( (-b - sqrt(pow(b,(GiNaC::numeric)2) - 4*c))/2 ).to_double();
     }
     else
     {
     	// Assume polynomial.degree() == 1.
-    	
-    	GiNaC::numeric a(polynomial.coeff(1));
-    	GiNaC::numeric b(polynomial.coeff(0));
-    	
+
+    	GiNaC::numeric a(polynomial.getCoeff(1));
+    	GiNaC::numeric b(polynomial.getCoeff(0));
+
     	value = (-b/a).to_double();
     }
-    
+
     return value;
 }
 
@@ -150,13 +149,13 @@ bool Algebraic::Invariants() const
 
     if (!polynomial.Invariants())
         return false;
-    
+
     if (!polynomial.isIrreducible())
     	return false;
-    
+
     if (polynomial.isConstant())
     	return false;
-    
+
     if (!polynomial.isMonic())
     	return false;
 
@@ -177,11 +176,4 @@ void Algebraic::SeparateIntervals(Algebraic & a, Algebraic & b)
         a.tightenInterval();
         b.tightenInterval();
     }
-}
-
-inline bool operator<(const Algebraic & alpha, const Algebraic & beta)
-{
-	assert(Invariants());
-	
-	return (alpha.compare(beta) == -1);
 }

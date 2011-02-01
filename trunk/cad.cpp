@@ -28,22 +28,20 @@ CAD::CAD(const std::list<std::string> & F)
             CAD::SamplePoints(CAD::FindRoots2(alpha, this->F));
 
         stacks.push_back(std::vector<Sample>()); // Should I name this parameter?
-        std::vector<Sample> & T = stacks.back;
+        std::vector<Sample> & T = stacks.back();
 
         T.reserve(betas.size());
 
         BOOST_FOREACH(const Algebraic & beta, betas)
         {
-            std::vector<Algebraic> numbers;
-            numbers.reserve(2);
-            numbers.push_back(alpha);
-            numbers.push_back(beta);
-
             std::vector<char> signs(this->F.size()); // allocates 'size' of
             										 // these up front.
 
-            for (unsigned int i = 0; i < this->F.size(); i++)
-                signs[i] = Sign(numbers, (this->F)[i]);
+            for (std::vector<char>::size_type i = 0;
+                 i < this->F.size();
+                 i++)
+                //signs[i] = Sign(numbers, (this->F)[i]);
+                signs[i] = this->F[i].signAt(alpha, beta);
 
             T.push_back(Sample(beta, signs));
         }
@@ -51,20 +49,23 @@ CAD::CAD(const std::list<std::string> & F)
 
     // maybe this should be an assert?
     if (!Invariants())
-        throw logic_error("CAD Constructor: CAD creation completed, but the"
-                          "result is not canonical.");
+        throw std::logic_error("CAD Constructor: CAD creation completed, but"
+                               "the result is not canonical.");
 }
 
 bool CAD::Connectivity(const Point & p1, const Point & p2) const
 {
     assert(Invariants());
 
-    return (M[CellNumber(Cell(p1))][CellNumber(Cell(p2))] == 1);
+    return (cMatrix(CellNumber(Cell(p1)),
+                    CellNumber(Cell(p2))) == 1);
 }
 
 CellIndex CAD::Cell(const Point & p) const
 {
     assert(Invariants());
+
+    return CellIndex();
 }
 
 unsigned int CAD::CellNumber(const CellIndex & i) const
@@ -76,7 +77,7 @@ unsigned int CAD::CellNumber(const CellIndex & i) const
 
     unsigned int num = 0;
 
-    for (int j = 0; j < i.first; j++)
+    for (unsigned int j = 0; j < i.first; j++)
         num += stacks[j].size();
 
     num += i.second;
@@ -99,16 +100,19 @@ bool CAD::Invariants() const
         if (stack.empty())
             return false;
 
+    BOOST_FOREACH(const Algebraic & alpha, samples)
+        if (!alpha.Invariants())
+            return false;
+
     BOOST_FOREACH(const std::vector<Sample> & stack, stacks)
         BOOST_FOREACH(const Sample & sample, stack)
         {
-            if (!sample.x.Invariants() || !sample.y.Invariants())
+            if (!sample.y.Invariants())
                 return false;
 
-            if (sample.signs != -1 &&
-                sample.signs !=  0 &&
-                sample.signs !=  1)
-                return false;
+            BOOST_FOREACH(const char & sign, sample.signs)
+                if (sign != -1 && sign !=  0 && sign !=  1)
+                    return false;
         }
 
     return true;
@@ -117,17 +121,17 @@ bool CAD::Invariants() const
 void CAD::ConnectivityMatrix()
 {
 	const std::vector< std::vector<Sample> > & S = stacks;
-	
+
 	unsigned int n = 0;
-	
+
 	BOOST_FOREACH(const std::vector<Sample> & s, S)
 		n += s.size();
-	
+
 	// matrix mat(n,n,identity);
-	
+
 	for (unsigned int k = 1; k < S.size(); k += 2)
 	{
-		cMatrix(i, j) = 1; // The diagonal already set and symmetry is
+		cMatrix(k,k/*i, j*/) = 1; // The diagonal already set and symmetry is
 						   // maintained internally by the matrix class.
 	}
 /*
@@ -153,7 +157,7 @@ CellIndex CAD::BranchCount(const CellIndex & ci)
     Algebraic & ycoord = stacks[ci.first][ci.second].y;
 
     unsigned int nroots = 0, L = 0, R = 0;
-
+/*
     while (true)
     {
         nroots = 0;
@@ -173,7 +177,7 @@ CellIndex CAD::BranchCount(const CellIndex & ci)
         L += sturm(sturmseq(eval(f,x=xcoord.lower()),y),y,op(ycoord[1]));
         R += sturm(sturmseq(eval(f,x=xcoord.upper()),y),y,op(ycoord[1]));
     }
-
+*/
     return CellIndex(L, R);
 }
 
@@ -182,7 +186,7 @@ void CAD::AdjacencyLeft(const unsigned int k)
     assert(Invariants());
     assert(k < stacks.size());
     assert(isOdd(k)); // Uses a private helper method.
-
+/*
     std::list<unsigned int> r;
 
     for (unsigned int i = 0; i < S[k].size(); i++) // i from 1 to nops(S[k])
@@ -215,20 +219,20 @@ void CAD::AdjacencyLeft(const unsigned int k)
         if evalb(S[k-1][l[i]][3]=S[k][r[i]][3])
             c := [op(c), [[k-1,l[i]],[k,r[i]]]];
 
-    return c;
+    return c;*/
 }
 
-std::vector<PolynomialQ> CAD::Project(const std::vector<PolynomialQQ> & F) const
+std::vector<PolynomialQ> CAD::Project(const std::vector<PolynomialQQ> & F)
 {
     std::vector<PolynomialQQ> G = PolynomialQQ::IrreducibleFactors(F);
     std::vector<PolynomialQ> P;
 
-    for (int i = 0; i < G.size()-1; i++)
-        for (int j = i+1; j < G.size(); j++)
+    for (std::vector<PolynomialQQ>::size_type i = 0;        i < G.size()-1; i++)
+        for (std::vector<PolynomialQQ>::size_type j = i+1;  j < G.size();   j++)
             P.push_back(PolynomialQQ::Resultant(G[i], G[j], 2));
 
-    for (int i = 0; i < G.size(); i++)
-        P.push_back(PolynomialQQ::Resultant(G[i], G[i].getDerivative(), 2));
+    for (std::vector<PolynomialQQ>::size_type i = 0;        i < G.size(); i++)
+        P.push_back(PolynomialQQ::Resultant(G[i], G[i].getDerivative(2), 2));
 
     return PolynomialQ::IrreducibleFactors(P);
 }
@@ -239,7 +243,7 @@ std::vector<PolynomialQ> CAD::Project(const std::vector<PolynomialQQ> & F) const
  *		   and on each end of the numbers in roots.
  */
 std::vector<Algebraic>
-    CAD::SamplePoints(const std::vector<Algebraic> & roots) const;
+    CAD::SamplePoints(const std::vector<Algebraic> & roots)
 {
     std::vector<Algebraic> S;
     S.reserve(2*roots.size() + 1);
@@ -247,21 +251,21 @@ std::vector<Algebraic>
     if (roots.size() == 0)
     {
         S.push_back(Algebraic());
-        return points;
+        return S;
     }
 
     // Assume roots.size() >= 1.
-    
+
     GiNaC::numeric s = roots.front().lower() - 1;
     S.push_back(Algebraic(CAD::MakePoly(s), IntervalQ(s)));
-    
+
     for (unsigned int i = 1; i < roots.size(); i++)
     {
     	s = (roots[i-1].upper() + roots[i].lower())/2;
     	S.push_back(Algebraic(CAD::MakePoly(s), IntervalQ(s)));
     	S.push_back(roots[i]);
     }
-    
+
     s = roots.back().upper() + 1;
     S.push_back(Algebraic(CAD::MakePoly(s), IntervalQ(s)));
 
@@ -272,27 +276,27 @@ std::vector<Algebraic>
    return [[[0,0],v-0]];
  fi;
  s := R[1][1][1]-1;
- S  := [[[s,s],v-s],R[1]];  
+ S  := [[[s,s],v-s],R[1]];
  for i from 2 to n do
    lb := R[i-1][1][2];
    ub := R[i  ][1][1];
    s  := (ub + lb)/2;
-   S  := [op(S),[[s,s],v-s],R[i]];  
+   S  := [op(S),[[s,s],v-s],R[i]];
  od;
  s := R[n][1][2]+1;
- S  := [op(S),[[s,s],v-s]];  
+ S  := [op(S),[[s,s],v-s]];
  return S;	*/
 }
 
 inline PolynomialQ CAD::MakePoly(const GiNaC::numeric & num)
 {
 	PolynomialQ p;
-	
-	return PolynomialQ(GiNaC::ex(p.getVar() - num));
+
+	return PolynomialQ(GiNaC::ex(p.getVariable() - num));
 }
 
 /*!
- * \param F Should not contain 0 polynomials; this 
+ * \param F Should not contain 0 polynomials; this
  */
 std::vector<Algebraic>
     CAD::FindRoots2(const Algebraic & alpha,
@@ -304,7 +308,7 @@ std::vector<Algebraic>
     // or implement & use some mul(vector) method.
     BOOST_FOREACH(const PolynomialQQ & f, F)
         fs *= f;
-    
+
     assert(!fs.isZero());
 
     // make a conversion operator from PolyQ to PolyQQ for alpha.
