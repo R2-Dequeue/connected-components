@@ -12,20 +12,20 @@
 #include <utility>
 #include <string>
 
-#include "polynomialq.h"
-#include "polynomialqq.h"
-#include "algebraic.h"
+#include "polynomialq.hpp"
+#include "polynomialqq.hpp"
+#include "algebraic.hpp"
 
 #include <boost/numeric/ublas/symmetric.hpp>
 
 //! The type used for the connectivity matrix.
 typedef boost::numeric::ublas::symmetric_matrix<unsigned char> uBitMatrix;
-typedef pair<Algebraic, Algebraic> Point; //!< Represents a point in the plane.
+typedef std::pair<Algebraic, Algebraic> Point; //!< Represents a point in the plane.
 /*!
  * \brief Stores pairs of indices into the CAD.
  * \detail Indices start at 0, not at 1.
  */
-typedef pair<unsigned int, unsigned int> CellIndex;
+typedef std::pair<unsigned int, unsigned int> CellIndex;
 
 /*!
  * \brief The cyclical algebraic decomposition of a set of polynomials.
@@ -42,7 +42,7 @@ private:
     class Sample
     {
     public:
-        Sample(const Algebraic & b, const std::vector<unsigned char> & s)
+        Sample(const Algebraic & b, const std::vector<char> & s)
             : y(b), signs(s) {};
 
         Algebraic y;
@@ -51,7 +51,7 @@ private:
          *       3-value equivalent of a bitset.
          */
         std::vector<char> signs; // -1, 0, or 1
-    }
+    };
 
     std::vector<PolynomialQQ> F; //!< The set of polynomials dividing the plane.
     std::vector<Algebraic> samples; //!< x-coords of vertical dividing lines.
@@ -92,11 +92,11 @@ private:
     void AdjacencyRight(const unsigned int k);
 
     static std::vector<PolynomialQ>
-        Project(const std::vector<PolynomialQQ> & F) const;
+        Project(const std::vector<PolynomialQQ> & F);
 
 	//! Inserts points between the passed vector.
     static std::vector<Algebraic>
-        SamplePoints(const std::vector<Algebraic> & roots) const;
+        SamplePoints(const std::vector<Algebraic> & roots);
 
 	//! Helper method for SamplePoints.
 	inline static PolynomialQ MakePoly(const GiNaC::numeric & num);
@@ -106,9 +106,9 @@ private:
         FindRoots2(const Algebraic & alpha, const std::vector<PolynomialQQ> & F);
 
 	//! Internal helper method.
-	inline static bool isEven(const unsigned int i) const { return (i & 1 == 0); }
+	inline static bool isEven(const unsigned int i) { return (i & 1 == 0); }
     //! Internal helper method.
-    inline static bool isOdd(const unsigned int i) const { return (i & 1 == 1); }
+    inline static bool isOdd(const unsigned int i) { return (i & 1 == 1); }
 };
 
 #endif // __CAD__

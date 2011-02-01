@@ -40,22 +40,26 @@ public:
 	PolynomialQ(const GiNaC::ex & e);
 	PolynomialQ(const GiNaC::numeric & n);
 
-	inline int degree() const; //!< The degree of the polynomial.
-	inline bool isMonic() const; //!< True iff the leading coefficient is 1.
-	inline bool isZero() const; //!< True iff the polynomial is '0'.
+    int degree() const; //!< The degree of the polynomial.
+    bool isMonic() const; //!< True iff the leading coefficient is 1.
+	bool isZero() const; //!< True iff the polynomial is '0'.
 	bool isIrreducible() const;
-	inline bool isConstant() const;
+	bool isConstant() const;
 
-	inline GiNaC::symbol getVariable() const { return variable; }
-	inline GiNaC::ex getEx() const;
+	GiNaC::symbol getVariable() const { return variable; }
+	GiNaC::ex getEx() const
+        { assert(Invariants()); return polynomial; }
 
     GiNaC::numeric getCoeff(const unsigned int i) const;
 
-    inline PolynomialQ getMonic() const;
-	inline PolynomialQ & makeMonic();
+    PolynomialQ getMonic() const;
+	PolynomialQ & makeMonic();
 
-    inline PolynomialQ getDerivative() const;
-    inline PolynomialQ & differentiate();
+    PolynomialQ getDerivative() const;
+    PolynomialQ & differentiate();
+
+    //! Returns the number of roots of f between a and b.
+    unsigned int sturm(const GiNaC::numeric & a, const GiNaC::numeric & b) const;
 
     std::vector<PolynomialQ> getIrreducibleFactors() const;
 
@@ -95,10 +99,10 @@ public:
     friend PolynomialQ operator*(const PolynomialQ & lhs, const GiNaC::numeric & num);
     friend PolynomialQ operator/(const PolynomialQ & lhs, const GiNaC::numeric & num);
 
-    friend inline bool operator==(const PolynomialQ & lhs, const PolynomialQ & rhs) {
+    friend bool operator==(const PolynomialQ & lhs, const PolynomialQ & rhs) {
         assert(lhs.Invariants() && rhs.Invariants());
         return (lhs.polynomial == rhs.polynomial); }
-    friend inline bool operator!=(const PolynomialQ & lhs, const PolynomialQ & rhs) {
+    friend bool operator!=(const PolynomialQ & lhs, const PolynomialQ & rhs) {
         assert(lhs.Invariants() && rhs.Invariants());
         return (lhs.polynomial != rhs.polynomial); }
 
@@ -110,7 +114,7 @@ protected:
     static void TestCompare(const PolynomialQ p,
                             const GiNaC::ex expected,
                             unsigned int & count);
-    static inline PolynomialQ ParseString(const std::string & s) const;
+    PolynomialQ ParseString(const std::string & s) const;
 };
 
 std::ostream & operator<<(std::ostream & output, const PolynomialQ & p);

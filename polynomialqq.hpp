@@ -34,12 +34,12 @@ public:
     PolynomialQQ(const char * const a);
     PolynomialQQ(const GiNaC::ex & e);
 	PolynomialQQ(const GiNaC::numeric & n);
-	
-	inline int degree() const; //!< The degree of the polynomial.
-	inline bool isMonic() const; //!< True iff the leading coefficient is 1.
-	inline bool isZero() const; //!< True iff the polynomial is '0'.
+
+    int degree() const; //!< The degree of the polynomial.
+    bool isMonic() const; //!< True iff the leading coefficient is 1.
+    bool isZero() const; //!< True iff the polynomial is '0'.
 	bool isIrreducible() const;
-	inline bool isConstant() const;
+    bool isConstant() const;
 
     PolynomialQQ getDerivative(unsigned int variable) const;
     PolynomialQQ & differentiate(unsigned int variable);
@@ -95,8 +95,8 @@ protected:
                           const GiNaC::ex & g,
                           const int k,
                           const GiNaC::symbol & var);
-    
-    static inline PolynomialQQ ParseString(const std::string & s) const;
+
+    inline PolynomialQQ ParseString(const std::string & s) const;
 };
 
 #endif // __POLYNOMIALQQ__
