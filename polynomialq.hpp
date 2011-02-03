@@ -59,7 +59,8 @@ public:
     PolynomialQ & differentiate();
 
     //! Returns the number of roots of f between a and b.
-    unsigned int sturm(const GiNaC::numeric & a, const GiNaC::numeric & b) const;
+    unsigned int sturm(const GiNaC::numeric & a,
+    				   const GiNaC::numeric & b) const;
 
     std::vector<PolynomialQ> getIrreducibleFactors() const;
 

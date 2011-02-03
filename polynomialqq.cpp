@@ -19,6 +19,10 @@
 const GiNaC::symbol & PolynomialQQ::var1 = PolynomialBase::var1;
 const GiNaC::symbol & PolynomialQQ::var2 = PolynomialBase::var2;
 
+/*!
+ * \throws parse_error Thrown by GiNaC if parsing fails (inherits
+ *		   invalid_argument).
+ */
 PolynomialQQ::PolynomialQQ(const std::string & s)
 {
 	polynomial = PolynomialQQ::ParseString(s).polynomial;
@@ -26,6 +30,10 @@ PolynomialQQ::PolynomialQQ(const std::string & s)
     assert(Invariants());
 }
 
+/*!
+ * \throws parse_error Thrown by GiNaC if parsing fails (inherits
+ *		   invalid_argument).
+ */
 PolynomialQQ::PolynomialQQ(const char * const a)
 {
 	std::string s(a);
@@ -172,6 +180,30 @@ PolynomialQQ & PolynomialQQ::differentiate(unsigned int variable)
     polynomial = polynomial.diff((variable == 1) ? var1 : var2);
 
     return *this;
+}
+
+PolynomialQ PolynomialQQ::subx(const GiNaC::numeric & a) const
+{
+	assert(Invariants());
+	assert(a.is_rational()); // throw?
+	
+	PolynomialQ p(polynomial.subs(var1 == a).subs(var2 == var1).expand());
+	
+	assert(p.Invariants());
+	
+	return p;
+}
+
+PolynomialQ PolynomialQQ::suby(const GiNaC::numeric & b) const
+{
+	assert(Invariants());
+	assert(b.is_rational()); // throw?
+	
+	PolynomialQ p(polynomial.subs(var2 == b).expand());
+	
+	assert(p.Invariants());
+	
+	return p;
 }
 
 std::vector<PolynomialQQ> PolynomialQQ::getIrreducibleFactors() const
@@ -496,6 +528,50 @@ boost::tuple<Algebraic, PolynomialQ, PolynomialQ>
  S     := eval(S,    _z=w);
  T     := eval(T,    _z=w);
  return gamma, S, T; */
+}
+
+GiNaC::ex PolynomialQQ::gcdex(GiNaC::ex f,
+							  GiNaC::ex g,
+							  const GiNaC::symbol & var,
+							  GiNaC::ex & c1,
+							  GiNaC::ex & c2)
+{
+	GiNaC::ex x = 0;	c1 = 1;
+	GiNaC::ex y = 1;	c2 = 0;
+	GiNaC::ex t1, t2, quotient;
+	
+	while (g != 0)
+	{
+		quotient = GiNaC::quo(f, g, var);
+		
+		t1 = f;
+		t2 = g;
+		f = t2;
+		g = GiNaC::rem(t1, t2, var);
+		
+		t1 = x;
+		t2 = c1;
+		x = t2 - quotient*t1;
+		c1 = t1;
+		
+		t1 = y;
+		t2 = c2;
+		y = t2 - quotient*t1;
+		c2 = t1;
+	}
+	
+	return f;
+
+//function extended_gcd(a, b)
+//    x := 0    lastx := 1
+//    y := 1    lasty := 0
+//    while b != 0
+//        quotient := a div b
+//        
+//        {a, b} = {b, a mod b}
+//        {x, lastx} = {lastx - quotient*x, x}
+//        {y, lasty} = {lasty - quotient*y, y}        
+//    return {lastx, lasty, a}
 }
 
 GiNaC::ex PolynomialQQ::sres(const GiNaC::ex & f,

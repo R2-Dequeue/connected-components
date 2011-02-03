@@ -208,12 +208,51 @@ unsigned int PolynomialQ::sturm(const GiNaC::numeric & a,
     PolynomialQ p2(*this);
     PolynomialQ p1(this->getDerivative());
 
-    GiNaC::numeric a2 = p2.eval(a), b2 = p2.eval(b);
-    GiNaC::numeric a1 = p1.eval(a), b1 = p1.eval(b);
-
+    GiNaC::numeric f2 = p2.eval(a), g2 = p2.eval(b);
+    GiNaC::numeric fa = p1.eval(a), gb = p1.eval(b);
+    GiNaC::numeric va = 0,			vb = 0;
+    
+    if (f2 != 0) // if == 0 then do nothing
+    {
+    	if (fa == 0)
+    		fa == f2;
+    	else
+    		if (sgn(fa) != sgn(f2))
+    			va = 1;
+    }
+    
+    if (g2 != 0) // if == 0 then do nothing
+    {
+    	if (gb == 0)
+    		gb == g2;
+    	else
+    		if (sgn(gb) != sgn(g2))
+    			vb = 1;
+    }
 
     while (!p1.isZero())
     {
+    	PolynomialQ rem = -(p1 % p2);
+    	GiNaC::numeric alpha = rem.eval(a), beta = rem.eval(b);
+    	
+    	if (alpha != 0)
+    	{
+    		if (fa != 0)
+    			if (sgn(alpha) != sgn(fa))
+    				va++;
+    		fa = alpha;
+    	}
+    	
+    	if (beta != 0)
+    	{
+    		if (gb != 0)
+    			if (sgn(beta) != sgn(gb))
+    				vb++;
+    		gb = beta;
+    	}
+    	
+    	p2 = p1;
+    	p1 = rem;
     }
 
     return va - vb;
