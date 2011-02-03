@@ -43,6 +43,9 @@ public:
 
     PolynomialQQ getDerivative(unsigned int variable) const;
     PolynomialQQ & differentiate(unsigned int variable);
+    
+    PolynomialQ subx(const GiNaC::numeric & a) const;
+    PolynomialQ suby(const GiNaC::numeric & b) const;
 
     std::vector<PolynomialQQ> getIrreducibleFactors() const;
 

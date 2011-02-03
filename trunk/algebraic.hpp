@@ -6,12 +6,9 @@
 #ifndef __ALGEBRAIC__
 #define __ALGEBRAIC__
 
-//#include <boost/numeric/interval.hpp>
-
 #include <ginac/ginac.h>
 
 #include "polynomialq.hpp"
-//class PolynomialQ; // To allow a circular dependancy.
 
 //! This type represents the interval in class Algebraic.
 //typedef boost::numeric::interval<GiNaC::numeric> IntervalQ;

@@ -9,6 +9,12 @@
 
 #include <boost/foreach.hpp>
 
+/*!
+ * \throws parse_error Thrown by GiNaC if parsing of polynomials fails (inherits
+ *		   invalid_argument).
+ * \todo Check if doxygen collates all 'throws' statements from called
+ *		 functions.
+ */
 CAD::CAD(const std::list<std::string> & F)
 {
     // can constructor be called on already instantiated object?
@@ -65,7 +71,43 @@ CellIndex CAD::Cell(const Point & p) const
 {
     assert(Invariants());
 
-    return CellIndex();
+	int ix = samples.size();
+	
+	for (unsigned int i = 1; i < samples.size(); i += 2) // i from 1 to nops(alphas)
+	{
+		int t = p.first.compare(samples[i]);
+		
+		if (t <= 0)
+		{
+			if (t == 0)
+				ix = i;
+			else
+				ix = i - 1;
+			
+			break;
+		}
+	}
+	
+	std::vector<Algebraic> betas = CAD::FindRoots2(p.first, F);
+
+	int iy = 2*betas.size();
+
+	for (unsigned int i = 0; i < betas.size(); i++) // i from 1 to nops(betas)
+	{
+		int t = p.second.compare(betas[i]);
+
+		if (t <= 0)
+		{
+			if (t == 0)
+				iy = 2*i + 1;
+			else
+				iy = 2*i;
+			
+			break;
+		}
+	}
+
+	return CellIndex(ix, iy);
 }
 
 unsigned int CAD::CellNumber(const CellIndex & i) const
@@ -157,14 +199,16 @@ CellIndex CAD::BranchCount(const CellIndex & ci)
     Algebraic & ycoord = stacks[ci.first][ci.second].y;
 
     unsigned int nroots = 0, L = 0, R = 0;
-/*
+
     while (true)
     {
         nroots = 0;
 
         BOOST_FOREACH(const PolynomialQQ & f, F)
-            nroots += sturm(sturmseq(eval(f,y=ycoord.lower()),x),x,op(xcoord[1])) +
-                      sturm(sturmseq(eval(f,y=ycoord.upper()),x),x,op(xcoord[1]));
+            nroots += f.suby(ycoord.lower()).sturm(xcoord.lower(),
+            									   xcoord.upper()) +
+            		  f.suby(ycoord.upper()).sturm(xcoord.lower(),
+            									   xcoord.upper());
 
         if (nroots == 0) then
             break;
@@ -174,10 +218,10 @@ CellIndex CAD::BranchCount(const CellIndex & ci)
 
     BOOST_FOREACH(const PolynomialQQ & f, F)
     {
-        L += sturm(sturmseq(eval(f,x=xcoord.lower()),y),y,op(ycoord[1]));
-        R += sturm(sturmseq(eval(f,x=xcoord.upper()),y),y,op(ycoord[1]));
+        L += f.subx(xcoord.lower()).sturm(ycoord.lower(), ycoord.upper());
+        R += f.subx(xcoord.upper()).sturm(ycoord.lower(), ycoord.upper());
     }
-*/
+
     return CellIndex(L, R);
 }
 
@@ -186,40 +230,50 @@ void CAD::AdjacencyLeft(const unsigned int k)
     assert(Invariants());
     assert(k < stacks.size());
     assert(isOdd(k)); // Uses a private helper method.
+    
+    typedef unsigned int uint;
+    
+    std::vector<uint> r; // Find a cap so I can use 'reserve'.
+    
+    for (uint i = 0; i < stacks[k].size(); i++)
+    {
+    	if (isOdd(i))
+    	{
+    		bcount = BranchCount(CellIndex(k,i));
+    		r.insert(r.end(), bcount.first, i);
+    	}
+    	else
+    		r.push_back(i);
+    }
+    
+    std::vector<uint> l(1, 1); // l = { 1 };
+    
+    for (uint i = 1; i < r.size(); i++)
+    {
+    	if (isOdd(r[i]) && isOdd(r[i-1]))
+    		l.push_back(l[i-1]+2);
+    	else if (isEven(r[i]) && isEven(r[i-1]))
+    		l.push_back(l[i-1]);
+    	else
+    		l.push_back(l[i-1]+1);
+    }
+    
+    std::vector<CellIndex> c;
+    
+    for (uint i = 0; i < r.size(); i++)
+    	if (stacks[k-1][...].signs == stacks[k][...].signs) // Do pairwise comparison.
+    		c.push_back(std::pair<CellIndex, CellIndex>(CellIndex(,),
+    													CellIndex(,)));
+
+    return c;
+
 /*
-    std::list<unsigned int> r;
-
-    for (unsigned int i = 0; i < S[k].size(); i++) // i from 1 to nops(S[k])
-    {
-        if (isOdd(i))
-        {
-            CellIndex bcount = BranchCount(k,i);
-            // r := [op(r), seq(i,j=1..bcount.first)];
-            r.insert(r.end(), bcount.first, i);
-        }
-        else
-            r.push_back(i); // r := [op(r), i];
-    }
-
-    std::list<unsigned int> l(1, 1); // l := [1]
-
-    for (unsigned int i = 1; i < r.size(); i++) // i from 2 to nops(r)
-    {
-        if (isOdd(r[i]) && isOdd(r[i-1]))
-            l := [op(l), l[i-1]+2];
-        else if (isEven(r[i]) && isEven(r[i-1]))
-            l := [op(l), l[i-1]];
-        else
-            l := [op(l), l[i-1]+1];
-    }
-
-    c := [];
-
-    for i from 1 to nops(r)
-        if evalb(S[k-1][l[i]][3]=S[k][r[i]][3])
-            c := [op(c), [[k-1,l[i]],[k,r[i]]]];
-
-    return c;*/
+ for i from 1 to nops(r) do
+   if evalb(S[k-1][l[i]][3]=S[k][r[i]][3]) then
+     c := [op(c), [[k-1,l[i]],[k,r[i]]]];
+   fi;
+ od;
+ return c; */
 }
 
 std::vector<PolynomialQ> CAD::Project(const std::vector<PolynomialQQ> & F)
@@ -296,7 +350,7 @@ inline PolynomialQ CAD::MakePoly(const GiNaC::numeric & num)
 }
 
 /*!
- * \param F Should not contain 0 polynomials; this
+ * \param F A vector of non-zero polynomials.
  */
 std::vector<Algebraic>
     CAD::FindRoots2(const Algebraic & alpha,
@@ -314,7 +368,8 @@ std::vector<Algebraic>
     // make a conversion operator from PolyQ to PolyQQ for alpha.
     // maybe PolynomialQ::getPolynomialQQ?
     PolynomialQ r = PolynomialQQ::Resultant(PolynomialQQ(alpha.getPolynomial().getEx()),
-    										fs, 1);
+    										fs,
+    										1);
 
     std::vector<Algebraic> P = PolynomialQ::FindRoots(r.getIrreducibleFactors());
     std::vector<Algebraic> R;

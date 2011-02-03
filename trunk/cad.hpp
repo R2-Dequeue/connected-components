@@ -66,7 +66,6 @@ private:
 
 public:
 
-    //CAD();
     CAD(const std::list<std::string> & F);
 
 	//! True if p1 and p2 are in the same component.
@@ -87,7 +86,9 @@ private:
 
     //! Calculates the connectivity matrix based on the private CAD.
     void ConnectivityMatrix();
+
     CellIndex BranchCount(const CellIndex & ci);
+
     void AdjacencyLeft(const unsigned int k);
     void AdjacencyRight(const unsigned int k);
 
