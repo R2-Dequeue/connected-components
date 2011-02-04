@@ -75,6 +75,8 @@ public:
     CellIndex Cell(const Point & p) const;
     //! Returns the cell's number according to the lexicographical ordering.
     unsigned int CellNumber(const CellIndex & i) const;
+    
+    void out() const;
 
     /*!
      * \brief Helper method for internal 'assert' checks.

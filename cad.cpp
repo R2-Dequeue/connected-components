@@ -127,6 +127,52 @@ unsigned int CAD::CellNumber(const CellIndex & i) const
     return num;
 }
 
+void CAD::out() const
+{
+	assert(Invariants());
+	
+	using namespace std;
+	
+	cout << "Number of functions: " << F.size() << endl;
+	cout << "Functions: ";
+	
+	if (F.size() >= 1)
+		cout << F[0] << endl;
+	
+	for (int i = 1; i < F.size(); i++)
+		cout << "           " << F[i] << endl;
+	
+	cout << "Number of samples: " << samples.size() << endl;
+	cout << "Number of stacks: " << stacks.size() << endl;
+	cout << "Individual stack sizes: ";
+	
+	for (int i = 0; i < stacks.size(); i++)
+		cout << "    " << "Size of stack " << i << ": " << stacks[i].size() << endl;
+	
+	cout << "Samples: " << endl;
+	
+	for (int i = 0; i < samples.size(); i++)
+		cout << "    " << samples[i] << endl;
+	
+	cout << "Stacks: " << endl;
+	
+	for (int i = 0; i < stacks.size(); i++)
+	{
+		cout << "    Stack " << i << ": " << endl;
+		
+		for (int j = 0; j < stacks[i].size(); j++)
+		{
+			cout << "        " << stacks[i][j].y << endl;
+			cout << "            ";
+			
+			for (int k = 0; k < stacks[i][j].signs.size(); k++)
+				cout << stacks[i][j].signs[k] << " ";
+			
+			cout << endl;
+		}
+	}
+}
+
 bool CAD::Invariants() const
 {
     if (this == NULL)

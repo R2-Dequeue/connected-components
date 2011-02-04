@@ -655,7 +655,7 @@ PolynomialQ PolynomialQ::ParseString(const std::string & s) const
 
 std::ostream & operator<<(std::ostream & output, const PolynomialQ & p)
 {
-    output << p.getEx() << std::endl;
+    output << p.getEx();
 
     return output;
 }
