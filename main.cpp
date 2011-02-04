@@ -14,9 +14,75 @@
 
 #include <boost/foreach.hpp>
 
+#define BOOST_TEST_MODULE Connected Components
+#include <boost/test/included/unit_test.hpp>
+
+BOOST_AUTO_TEST_SUITE(Class_PolynomialQ)
+
+BOOST_AUTO_TEST_CASE(Constructor_Tests)
+{
+    PolynomialQ pnull;
+    BOOST_CHECK_EQUAL(pnull.degree(), 0);
+    //BOOST_CHECK(pnull.isMonic());
+    BOOST_CHECK(pnull.isZero());
+    BOOST_CHECK(pnull.isIrreducible());
+    BOOST_CHECK(pnull.isConstant());
+    BOOST_CHECK_EQUAL(pnull.getEx(), (GiNaC::ex)0);
+    //BOOST_CHECK_EQUAL(pnull, pnull.getMonic());
+    BOOST_CHECK_EQUAL(pnull, pnull.getDerivative());
+    BOOST_CHECK(pnull.getIrreducibleFactors().empty());
+    BOOST_CHECK_EQUAL(pnull.getCoeff(0), 0);
+    BOOST_CHECK_EQUAL(pnull.getCoeff(1), 0);
+
+    BOOST_CHECK_EQUAL(pnull.differentiate(), PolynomialQ(GiNaC::numeric(0)));
+    BOOST_CHECK_EQUAL(pnull.getEx(), GiNaC::ex(0));
+
+    PolynomialQ nmonic("5*x^2-25*x+30");
+    BOOST_CHECK_EQUAL(nmonic.degree(), 2);
+    BOOST_CHECK(!nmonic.isMonic());
+    BOOST_CHECK(!nmonic.isZero());
+    BOOST_CHECK(!nmonic.isIrreducible());
+    BOOST_CHECK(!nmonic.isConstant());
+    BOOST_CHECK_EQUAL(nmonic.getEx(), 5*pow(nmonic.getVariable(), GiNaC::ex(2))-25*nmonic.getVariable()+30);
+    BOOST_CHECK_EQUAL(nmonic.getDerivative(), PolynomialQ("10*x-25"));
+    BOOST_CHECK(nmonic.getIrreducibleFactors().size() == 2);
+
+    PolynomialQ nm2("5*(x-2)*(x-3)");
+    BOOST_CHECK_EQUAL(nmonic, nm2);
+}
+
+BOOST_AUTO_TEST_CASE(Derivative_Tests)
+{
+    PolynomialQ p("x^2+1");
+    BOOST_CHECK_EQUAL(p.getDerivative().getEx(), GiNaC::ex(p.getVariable()*2));
+    BOOST_CHECK_EQUAL(p.getDerivative().getDerivative().getEx(), GiNaC::ex(2));
+    BOOST_CHECK_EQUAL(p.getDerivative().getDerivative().getDerivative().getEx(), GiNaC::ex(0));
+    BOOST_CHECK_EQUAL(p.getDerivative().getDerivative().getDerivative().getDerivative().getEx(), GiNaC::ex(0));
+    BOOST_CHECK_EQUAL(p.getDerivative().getDerivative().getDerivative().getDerivative().getDerivative().getEx(), GiNaC::ex(0));
+    BOOST_CHECK_EQUAL(p.getDerivative().getDerivative().getDerivative().getDerivative().getDerivative().getDerivative().getEx(), GiNaC::ex(0));
+    p.differentiate();
+    BOOST_CHECK_EQUAL(p, GiNaC::ex(p.getVariable()*2));
+    p.differentiate();
+    BOOST_CHECK_EQUAL(p, GiNaC::ex(2));
+    p.differentiate();
+    BOOST_CHECK_EQUAL(p, GiNaC::ex(0));
+    p.differentiate();
+    BOOST_CHECK_EQUAL(p, GiNaC::ex(0));
+    p.differentiate();
+    BOOST_CHECK_EQUAL(p, GiNaC::ex(0));
+    p.differentiate();
+    BOOST_CHECK_EQUAL(p, GiNaC::ex(0));
+}
+
+BOOST_AUTO_TEST_CASE(old_tests)
+{
+    BOOST_CHECK_EQUAL(2, 2);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+/*
 int main()
 {
-    /*
     using namespace std;
     using namespace GiNaC;
 
@@ -39,11 +105,9 @@ int main()
     poly = expand(poly*poly2);
 
     cout << "poly*poly2 = " << poly << endl << endl;
-    */
 
     // Code for CAD stuff /////////////////////////////////////////////////////
 
-    /*
     try
     {
         list<string> F;
@@ -56,9 +120,7 @@ int main()
     {
         cout << "Exception thrown in CAD code: " << e.what() << endl;
     }
-    */
 
-    /*
     PolynomialQ p(std::string("1+x+x^2+7/2*x^5")),
                 f(std::string("x+2")),g(std::string("x+3"));
 
@@ -67,7 +129,6 @@ int main()
     std::cout << g;
     std::cout << f*g;
     std::cout << (f*g)/PolynomialQ(std::string("x+3"));
-    */
 
     PolynomialQ::TestClass();
 
@@ -115,4 +176,4 @@ int main()
     std::cin.get();
 
     return 0;
-}
+}*/
