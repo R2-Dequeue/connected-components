@@ -177,3 +177,11 @@ void Algebraic::SeparateIntervals(Algebraic & a, Algebraic & b)
         b.tightenInterval();
     }
 }
+
+std::ostream & operator<<(std::ostream & output, const Algebraic & alpha)
+{
+    output << "( [" << rootinterval.lower() << ", " << rootinterval.upper()
+    	   << "], " << polynomial.getEx() << " )" << std::endl;
+
+    return output;
+}

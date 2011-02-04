@@ -70,6 +70,7 @@ public:
     inline bool operator!=(const Algebraic & b) { return (compare(b) != 0); }
 
 	friend class PolynomialQ;
+	friend std::ostream & operator<<(std::ostream & output, const Algebraic & alpha);
 };
 
 inline bool operator<(const Algebraic & alpha, const Algebraic & beta)
