@@ -82,6 +82,13 @@ public:
      */
     bool Invariants() const;
 
+    /*
+     * 1) toString() method
+     * 2) print() method to cout
+     * 3) print(stream) method
+     * 4) operator>> overload for use with streams
+     */
+
 private:
 
     //! Calculates the connectivity matrix based on the private CAD.

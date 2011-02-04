@@ -46,7 +46,8 @@ public:
 	bool isIrreducible() const;
 	bool isConstant() const;
 
-	GiNaC::symbol getVariable() const { return variable; }
+	GiNaC::symbol getVariable() const   { return variable; }
+	//GiNaC::symbol getVar() const        { return variable; }
 	GiNaC::ex getEx() const
         { assert(Invariants()); return polynomial; }
 
