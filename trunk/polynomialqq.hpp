@@ -43,7 +43,7 @@ public:
 
     PolynomialQQ getDerivative(unsigned int variable) const;
     PolynomialQQ & differentiate(unsigned int variable);
-    
+
     PolynomialQ subx(const GiNaC::numeric & a) const;
     PolynomialQ suby(const GiNaC::numeric & b) const;
 
@@ -93,6 +93,12 @@ protected:
         ANComb(const Algebraic & alpha, const Algebraic & beta, int t);
     static boost::tuple<Algebraic, PolynomialQ, PolynomialQ>
         Simple(const Algebraic & alpha, const Algebraic & beta);
+
+    GiNaC::ex gcdex(GiNaC::ex f,
+                    GiNaC::ex g,
+                    const GiNaC::symbol & var,
+                    GiNaC::ex & c1,
+                    GiNaC::ex & c2);
 
     static GiNaC::ex sres(const GiNaC::ex & f,
                           const GiNaC::ex & g,

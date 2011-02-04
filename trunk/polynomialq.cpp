@@ -85,6 +85,9 @@ int PolynomialQ::degree() const
 	return polynomial.degree(variable);
 }
 
+/*!
+ * \detail The zero polynomial is considered monic.
+ */
 bool PolynomialQ::isMonic() const
 {
 	assert(Invariants());
@@ -147,13 +150,21 @@ GiNaC::numeric PolynomialQ::getCoeff(const unsigned int i) const
     return num;
 }
 
+/*!
+ * \todo Figure out how to handle the zero polynomial.
+ */
 PolynomialQ PolynomialQ::getMonic() const
 {
     assert(Invariants());
 
-    PolynomialQ temp((polynomial / polynomial.lcoeff(variable)).expand());
+    if (!this->isZero())
+    {
+        PolynomialQ temp((polynomial / polynomial.lcoeff(variable)).expand());
+        assert(temp.Invariants());
+        return temp;
+    }
 
-    assert(temp.Invariants());
+    PolynomialQ temp(*this);
 
     return temp;
 }
@@ -211,51 +222,53 @@ unsigned int PolynomialQ::sturm(const GiNaC::numeric & a,
     GiNaC::numeric f2 = p2.eval(a), g2 = p2.eval(b);
     GiNaC::numeric fa = p1.eval(a), gb = p1.eval(b);
     GiNaC::numeric va = 0,			vb = 0;
-    
+
     if (f2 != 0) // if == 0 then do nothing
     {
     	if (fa == 0)
     		fa == f2;
     	else
-    		if (sgn(fa) != sgn(f2))
+    		if (csgn(fa) != csgn(f2))
     			va = 1;
     }
-    
+
     if (g2 != 0) // if == 0 then do nothing
     {
     	if (gb == 0)
     		gb == g2;
     	else
-    		if (sgn(gb) != sgn(g2))
+    		if (csgn(gb) != csgn(g2))
     			vb = 1;
     }
 
     while (!p1.isZero())
     {
-    	PolynomialQ rem = -(p1 % p2);
+    	PolynomialQ rem = (p1 % p2)*(-1);
     	GiNaC::numeric alpha = rem.eval(a), beta = rem.eval(b);
-    	
+
     	if (alpha != 0)
     	{
     		if (fa != 0)
-    			if (sgn(alpha) != sgn(fa))
+    			if (csgn(alpha) != csgn(fa))
     				va++;
     		fa = alpha;
     	}
-    	
+
     	if (beta != 0)
     	{
     		if (gb != 0)
-    			if (sgn(beta) != sgn(gb))
+    			if (csgn(beta) != csgn(gb))
     				vb++;
     		gb = beta;
     	}
-    	
+
     	p2 = p1;
     	p1 = rem;
     }
 
-    return va - vb;
+    assert((va-vb).is_nonneg_integer());
+
+    return (va - vb).to_int();
 }
 
 /*!
@@ -635,8 +648,7 @@ PolynomialQ PolynomialQ::ParseString(const std::string & s) const
     reader.strict = true; // Tells reader to throw if variables besides
     					  // 'variable' appear in the passed string.
 
-    // reader(s).expand(); ?
-    PolynomialQ p(reader(s)); // throws an exception if parsing fails
+    PolynomialQ p(reader(s).expand()); // throws an exception if parsing fails
 
     return p;
 }

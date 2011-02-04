@@ -186,11 +186,11 @@ PolynomialQ PolynomialQQ::subx(const GiNaC::numeric & a) const
 {
 	assert(Invariants());
 	assert(a.is_rational()); // throw?
-	
+
 	PolynomialQ p(polynomial.subs(var1 == a).subs(var2 == var1).expand());
-	
+
 	assert(p.Invariants());
-	
+
 	return p;
 }
 
@@ -198,11 +198,11 @@ PolynomialQ PolynomialQQ::suby(const GiNaC::numeric & b) const
 {
 	assert(Invariants());
 	assert(b.is_rational()); // throw?
-	
+
 	PolynomialQ p(polynomial.subs(var2 == b).expand());
-	
+
 	assert(p.Invariants());
-	
+
 	return p;
 }
 
@@ -539,27 +539,27 @@ GiNaC::ex PolynomialQQ::gcdex(GiNaC::ex f,
 	GiNaC::ex x = 0;	c1 = 1;
 	GiNaC::ex y = 1;	c2 = 0;
 	GiNaC::ex t1, t2, quotient;
-	
+
 	while (g != 0)
 	{
 		quotient = GiNaC::quo(f, g, var);
-		
+
 		t1 = f;
 		t2 = g;
 		f = t2;
 		g = GiNaC::rem(t1, t2, var);
-		
+
 		t1 = x;
 		t2 = c1;
 		x = t2 - quotient*t1;
 		c1 = t1;
-		
+
 		t1 = y;
 		t2 = c2;
 		y = t2 - quotient*t1;
 		c2 = t1;
 	}
-	
+
 	return f;
 
 //function extended_gcd(a, b)
@@ -567,10 +567,10 @@ GiNaC::ex PolynomialQQ::gcdex(GiNaC::ex f,
 //    y := 1    lasty := 0
 //    while b != 0
 //        quotient := a div b
-//        
+//
 //        {a, b} = {b, a mod b}
 //        {x, lastx} = {lastx - quotient*x, x}
-//        {y, lasty} = {lasty - quotient*y, y}        
+//        {y, lasty} = {lasty - quotient*y, y}
 //    return {lastx, lasty, a}
 }
 
@@ -634,8 +634,7 @@ inline PolynomialQQ PolynomialQQ::ParseString(const std::string & s) const
     GiNaC::parser reader(table); // reader(table, true);
     reader.strict = true;
 
-    // reader(s).expand(); ?
-    PolynomialQQ p(reader(s)); // throws an exception if parsing fails.
+    PolynomialQQ p(reader(s).expand()); // throws an exception if parsing fails.
 
     return p;
 }
