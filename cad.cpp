@@ -15,7 +15,7 @@
  * \todo Check if doxygen collates all 'throws' statements from called
  *		 functions.
  */
-CAD::CAD(const std::list<std::string> & F)
+CAD::CAD(const std::vector<std::string> & F)
 {
     // can constructor be called on already instantiated object?
     // Be careful with 'F' and 'this->F'.
@@ -43,12 +43,12 @@ CAD::CAD(const std::list<std::string> & F)
             std::vector<char> signs(this->F.size()); // allocates 'size' of
             										 // these up front.
 
-            for (std::vector<char>::size_type i = 0;
+            /*for (std::vector<char>::size_type i = 0;
                  i < this->F.size();
                  i++)
                 //signs[i] = Sign(numbers, (this->F)[i]);
-                signs[i] = this->F[i].signAt(alpha, beta);
-
+                //signs[i] = this->F[i].signAt(alpha, beta);
+*/
             T.push_back(Sample(beta, signs));
         }
     }
@@ -72,22 +72,22 @@ CellIndex CAD::Cell(const Point & p) const
     assert(Invariants());
 
 	int ix = samples.size();
-	
+
 	for (unsigned int i = 1; i < samples.size(); i += 2) // i from 1 to nops(alphas)
 	{
 		int t = p.first.compare(samples[i]);
-		
+
 		if (t <= 0)
 		{
 			if (t == 0)
 				ix = i;
 			else
 				ix = i - 1;
-			
+
 			break;
 		}
 	}
-	
+
 	std::vector<Algebraic> betas = CAD::FindRoots2(p.first, F);
 
 	int iy = 2*betas.size();
@@ -102,7 +102,7 @@ CellIndex CAD::Cell(const Point & p) const
 				iy = 2*i + 1;
 			else
 				iy = 2*i;
-			
+
 			break;
 		}
 	}
@@ -130,44 +130,45 @@ unsigned int CAD::CellNumber(const CellIndex & i) const
 void CAD::out() const
 {
 	assert(Invariants());
-	
+
 	using namespace std;
-	
+
+	typedef unsigned int uint;
+
 	cout << "Number of functions: " << F.size() << endl;
 	cout << "Functions: ";
-	
+
 	if (F.size() >= 1)
 		cout << F[0] << endl;
-	
-	for (int i = 1; i < F.size(); i++)
+
+	for (uint i = 1; i < F.size(); i++)
 		cout << "           " << F[i] << endl;
-	
+
 	cout << "Number of samples: " << samples.size() << endl;
 	cout << "Number of stacks: " << stacks.size() << endl;
-	cout << "Individual stack sizes: ";
-	
-	for (int i = 0; i < stacks.size(); i++)
+	cout << "Individual stack sizes: " << endl;
+
+	for (uint i = 0; i < stacks.size(); i++)
 		cout << "    " << "Size of stack " << i << ": " << stacks[i].size() << endl;
-	
+
 	cout << "Samples: " << endl;
-	
-	for (int i = 0; i < samples.size(); i++)
+
+	for (uint i = 0; i < samples.size(); i++)
 		cout << "    " << samples[i] << endl;
-	
+
 	cout << "Stacks: " << endl;
-	
-	for (int i = 0; i < stacks.size(); i++)
+
+	for (uint i = 0; i < stacks.size(); i++)
 	{
 		cout << "    Stack " << i << ": " << endl;
-		
-		for (int j = 0; j < stacks[i].size(); j++)
+
+		for (uint j = 0; j < stacks[i].size(); j++)
 		{
-			cout << "        " << stacks[i][j].y << endl;
-			cout << "            ";
-			
-			for (int k = 0; k < stacks[i][j].signs.size(); k++)
+			cout << "        " << stacks[i][j].y << " , Signs: ";
+
+			for (uint k = 0; k < stacks[i][j].signs.size(); k++)
 				cout << stacks[i][j].signs[k] << " ";
-			
+
 			cout << endl;
 		}
 	}
@@ -256,7 +257,7 @@ CellIndex CAD::BranchCount(const CellIndex & ci)
             		  f.suby(ycoord.upper()).sturm(xcoord.lower(),
             									   xcoord.upper());
 
-        if (nroots == 0) then
+        if (nroots == 0)
             break;
 
         xcoord.tightenInterval();
@@ -276,11 +277,12 @@ void CAD::AdjacencyLeft(const unsigned int k)
     assert(Invariants());
     assert(k < stacks.size());
     assert(isOdd(k)); // Uses a private helper method.
-    
+
     typedef unsigned int uint;
-    
+
     std::vector<uint> r; // Find a cap so I can use 'reserve'.
-    
+    CellIndex bcount;
+
     for (uint i = 0; i < stacks[k].size(); i++)
     {
     	if (isOdd(i))
@@ -291,9 +293,9 @@ void CAD::AdjacencyLeft(const unsigned int k)
     	else
     		r.push_back(i);
     }
-    
+
     std::vector<uint> l(1, 1); // l = { 1 };
-    
+
     for (uint i = 1; i < r.size(); i++)
     {
     	if (isOdd(r[i]) && isOdd(r[i-1]))
@@ -303,15 +305,15 @@ void CAD::AdjacencyLeft(const unsigned int k)
     	else
     		l.push_back(l[i-1]+1);
     }
-    
+
     std::vector<CellIndex> c;
-    
+/*
     for (uint i = 0; i < r.size(); i++)
     	if (stacks[k-1][...].signs == stacks[k][...].signs) // Do pairwise comparison.
     		c.push_back(std::pair<CellIndex, CellIndex>(CellIndex(,),
     													CellIndex(,)));
-
-    return c;
+*/
+//    return c;
 
 /*
  for i from 1 to nops(r) do
@@ -322,6 +324,9 @@ void CAD::AdjacencyLeft(const unsigned int k)
  return c; */
 }
 
+/*!
+ * \todo Reserve the space for P upfront.
+ */
 std::vector<PolynomialQ> CAD::Project(const std::vector<PolynomialQQ> & F)
 {
     std::vector<PolynomialQQ> G = PolynomialQQ::IrreducibleFactors(F);
@@ -359,10 +364,13 @@ std::vector<Algebraic>
     GiNaC::numeric s = roots.front().lower() - 1;
     S.push_back(Algebraic(CAD::MakePoly(s), IntervalQ(s)));
 
+    S.push_back(roots[0]);
+
     for (unsigned int i = 1; i < roots.size(); i++)
     {
     	s = (roots[i-1].upper() + roots[i].lower())/2;
     	S.push_back(Algebraic(CAD::MakePoly(s), IntervalQ(s)));
+
     	S.push_back(roots[i]);
     }
 
@@ -422,7 +430,7 @@ std::vector<Algebraic>
     R.reserve(P.size());
 
     BOOST_FOREACH(const Algebraic & p, P)
-        if (fs.signAt(alpha, p) == 0)
+        //if (fs.signAt(alpha, p) == 0)
             R.push_back(p);
 
     return R;

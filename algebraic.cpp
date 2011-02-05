@@ -180,8 +180,8 @@ void Algebraic::SeparateIntervals(Algebraic & a, Algebraic & b)
 
 std::ostream & operator<<(std::ostream & output, const Algebraic & alpha)
 {
-    output << "( [" << rootinterval.lower() << ", " << rootinterval.upper()
-    	   << "], " << polynomial.getEx() << " )" << std::endl;
+    output << "( [" << GiNaC::ex(alpha.rootinterval.lower()) << ", " << GiNaC::ex(alpha.rootinterval.upper())
+    	   << "], " << alpha.polynomial.getEx() << " )";
 
     return output;
 }

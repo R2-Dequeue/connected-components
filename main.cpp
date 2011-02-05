@@ -6,14 +6,16 @@
 #include <iostream>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 #include <ginac/ginac.h>
 
-//#include "cad.hpp"
-#include "polynomialq.hpp"
+#include "cad.hpp"
+//#include "polynomialq.hpp"
 
 #include <boost/foreach.hpp>
 
+/*
 #define BOOST_TEST_MODULE Connected Components
 #include <boost/test/included/unit_test.hpp>
 
@@ -80,12 +82,13 @@ BOOST_AUTO_TEST_CASE(old_tests)
 }
 
 BOOST_AUTO_TEST_SUITE_END()
-/*
+*/
+
 int main()
 {
     using namespace std;
     using namespace GiNaC;
-
+/*
     cout << "Hello world!" << endl;
 
     symbol x("x"), y("y");
@@ -105,22 +108,24 @@ int main()
     poly = expand(poly*poly2);
 
     cout << "poly*poly2 = " << poly << endl << endl;
-
+*/
     // Code for CAD stuff /////////////////////////////////////////////////////
 
     try
     {
-        list<string> F;
+        vector<string> F;
         F.push_back("x^2+y^2-4");
         F.push_back("x+y");
 
         CAD mainCAD(F);
+
+        mainCAD.out();
     }
     catch (exception & e)
     {
         cout << "Exception thrown in CAD code: " << e.what() << endl;
     }
-
+/*
     PolynomialQ p(std::string("1+x+x^2+7/2*x^5")),
                 f(std::string("x+2")),g(std::string("x+3"));
 
@@ -172,8 +177,8 @@ int main()
 
     BOOST_FOREACH(const PolynomialQ & poly, factors)
         std::cout << poly;
-
+*/
     std::cin.get();
 
     return 0;
-}*/
+}

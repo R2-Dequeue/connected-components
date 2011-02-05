@@ -108,4 +108,6 @@ protected:
     inline PolynomialQQ ParseString(const std::string & s) const;
 };
 
+std::ostream & operator<<(std::ostream & output, const PolynomialQQ & p);
+
 #endif // __POLYNOMIALQQ__
