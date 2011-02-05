@@ -66,7 +66,7 @@ private:
 
 public:
 
-    CAD(const std::list<std::string> & F);
+    CAD(const std::vector<std::string> & F);
 
 	//! True if p1 and p2 are in the same component.
     bool Connectivity(const Point & p1, const Point & p2) const;
@@ -75,7 +75,7 @@ public:
     CellIndex Cell(const Point & p) const;
     //! Returns the cell's number according to the lexicographical ordering.
     unsigned int CellNumber(const CellIndex & i) const;
-    
+
     void out() const;
 
     /*!
@@ -116,9 +116,9 @@ private:
         FindRoots2(const Algebraic & alpha, const std::vector<PolynomialQQ> & F);
 
 	//! Internal helper method.
-	inline static bool isEven(const unsigned int i) { return (i & 1 == 0); }
+	inline static bool isEven(const unsigned int i) { return ((i & 1) == 0); }
     //! Internal helper method.
-    inline static bool isOdd(const unsigned int i) { return (i & 1 == 1); }
+    inline static bool isOdd(const unsigned int i) { return ((i & 1) == 1); }
 };
 
 #endif // __CAD__

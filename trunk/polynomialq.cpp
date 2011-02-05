@@ -400,16 +400,27 @@ std::vector<Algebraic> PolynomialQ::FindRoots(const std::vector<PolynomialQ> P)
         {
             const GiNaC::numeric b = f.getCoeff(1);
             const GiNaC::numeric c = f.getCoeff(0);
-            const GiNaC::numeric discriminant = pow(b,(GiNaC::numeric)2) - 4*c;
+            const GiNaC::numeric discriminant = b*b - 4*c;
 
             if (discriminant > 0) // ==> We have real roots.
             {
                 const GiNaC::numeric left = -b/2;
-                const GiNaC::numeric right = GiNaC::sqrt(discriminant) / 2;
+                const GiNaC::numeric right = discriminant / 4;
                 // Note: the above is always > 0.
 
-                Algebraic alpha(f, IntervalQ( left 		, left+right	));
-                Algebraic beta (f, IntervalQ( left-right	, left			));
+                Algebraic alpha;
+                Algebraic beta;
+
+                if (right > 1)
+                {
+                    alpha = Algebraic(f, IntervalQ( left,       left+right	));
+                    beta  = Algebraic(f, IntervalQ( left-right, left		));
+                }
+                else
+                {
+                    alpha = Algebraic(f, IntervalQ( left,       left+1	));
+                    beta  = Algebraic(f, IntervalQ( left-1,     left	));
+                }
 
                 Algebraic::SeparateIntervals(alpha, beta);
 

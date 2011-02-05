@@ -73,7 +73,7 @@ inline bool PolynomialQQ::isMonic() const
 	return (polynomial.lcoeff(variable) == 1);
 }
 */
-inline bool PolynomialQQ::isZero() const
+bool PolynomialQQ::isZero() const
 {
 	assert(Invariants());
 
@@ -496,7 +496,7 @@ boost::tuple<Algebraic, PolynomialQ, PolynomialQ>
 
         //g = gcdex(gamma.getEx().subs(gamma.getPolynomial().getVariable() == s1.coeff(tmp, 1))
 
-        //if (g.degree() == 0)
+        if (g.degree() == 0)
             break;
 
         t++;
@@ -637,4 +637,11 @@ inline PolynomialQQ PolynomialQQ::ParseString(const std::string & s) const
     PolynomialQQ p(reader(s).expand()); // throws an exception if parsing fails.
 
     return p;
+}
+
+std::ostream & operator<<(std::ostream & output, const PolynomialQQ & p)
+{
+    output << p.getEx();
+
+    return output;
 }
