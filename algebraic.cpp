@@ -77,7 +77,8 @@ Algebraic & Algebraic::tightenInterval()
     const GiNaC::numeric sample = polynomial.eval(m);
 
     if (sample == 0)
-        rootinterval.assign((3*l + u)/4, (l + 3*u)/4);
+        //rootinterval.assign((3*l + u)/4, (l + 3*u)/4);
+        rootinterval.assign((l+m)/2, (u+m)/2);
     else
     {
         GiNaC::ex num = sample * polynomial.eval(rootinterval.upper());
@@ -87,6 +88,21 @@ Algebraic & Algebraic::tightenInterval()
         else
             rootinterval.assign(l, m);
     }
+/*local v,l,u,m,p,pm,rr;
+ v := Var(r[2]);
+ l := r[1][1];
+ u := r[1][2];
+ p := r[2];
+ m := (u+l)/2;
+ pm := eval(p,v=m);
+ if pm = 0 then
+    rr := [[(l+m)/2,(u+m)/2],p];
+ elif pm * eval(p,v=u) <= 0 then
+   rr := [[m,u],p];
+ else
+   rr := [[l,m],p];
+ fi;
+ return rr; */
 
     return *this;
 }

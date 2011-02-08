@@ -110,8 +110,13 @@ public:
 
     friend class PolynomialQQ;
 
-protected:
+//protected:
 
+    static std::vector<Algebraic> FindRootsOfIrreducible(const PolynomialQ & p);
+    static std::vector<PolynomialQ> sturmseq(const PolynomialQ & p);
+    static GiNaC::numeric sturm(const std::vector<PolynomialQ> & F,
+                                const GiNaC::numeric & a,
+                                const GiNaC::numeric & b);
     IntervalQ boundRange(const IntervalQ & interval) const;
     static void TestCompare(const PolynomialQ p,
                             const GiNaC::ex expected,

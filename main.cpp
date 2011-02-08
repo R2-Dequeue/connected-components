@@ -11,9 +11,10 @@
 #include <ginac/ginac.h>
 
 #include "cad.hpp"
-//#include "polynomialq.hpp"
+#include "polynomialqq.hpp"
 
 #include <boost/foreach.hpp>
+#include <boost/tuple/tuple.hpp>
 
 /*
 #define BOOST_TEST_MODULE Connected Components
@@ -112,14 +113,87 @@ int main()
     // Code for CAD stuff /////////////////////////////////////////////////////
 
     try
-    {
+    {/*
         vector<string> F;
         F.push_back("x^2+y^2-4");
         F.push_back("x+y");
 
         CAD mainCAD(F);
 
-        mainCAD.out();
+        mainCAD.out();*/
+/*
+        Algebraic alpha(PolynomialQ("x^2-2"), IntervalQ(1, 2));
+        Algebraic beta(PolynomialQ("x^2-3"), IntervalQ(1, 2));
+
+        cout << alpha << endl;
+        cout << beta << endl;
+GiNaC::symbol v = alpha.getPolynomial().getVariable();
+        cout << GiNaC::factor(v*v*v*v - 10*v*v +1) << endl;
+        {
+            cout << "****************" << endl;
+            ex f = v*v - 5*v + 6;
+            ex fac = factor(f);
+            cout << ((f == fac) ? "same" : "diff") << endl;
+            cout << "Is f an add?" << (is_a<add>(f) ? "Yes" : "No") << endl;
+            cout << "Is f a mul?" << (is_a<mul>(f) ? "Yes" : "No") << endl;
+            cout << "Is fac a add?" << (is_a<add>(fac) ? "Yes" : "No") << endl;
+            cout << "Is fac a mul?" << (is_a<mul>(fac) ? "Yes" : "No") << endl;
+            cout << f << endl;
+            cout << fac << endl;
+            ex g = ex((v-2)*(v-3)*(v-5)).expand();
+            ex gfac = factor(g);
+            cout << "g: " << g << endl;
+            cout << "g factored: " << gfac << endl;
+            cout << "Is g an add?" << (is_a<add>(g) ? "Yes" : "No") << endl;
+            cout << "Is g a mul?" << (is_a<mul>(g) ? "Yes" : "No") << endl;
+            cout << "Is gfac a add?" << (is_a<add>(gfac) ? "Yes" : "No") << endl;
+            cout << "Is gfac a mul?" << (is_a<mul>(gfac) ? "Yes" : "No") << endl;
+            cout << "****************" << endl;
+        }*/
+        {
+            PolynomialQ p("(x-3)*(x-5)*(x-7)");
+            cout << p << endl;
+            vector<PolynomialQ> seq = PolynomialQ::sturmseq(p);
+            cout << "Sturm sequence:" << endl;
+            BOOST_FOREACH(const PolynomialQ & f, seq)
+                cout << "    " << f << endl;
+            cout << "sturm(-100,100): " << ex(PolynomialQ::sturm(seq,-100,100)) << endl;
+            cout << "sturm(-6,6): " << ex(PolynomialQ::sturm(seq,-6,6)) << endl;
+            cout << "sturm(-1,1): " << ex(PolynomialQ::sturm(seq,-1,1)) << endl;
+            cout << "sturm(6,8): " << ex(PolynomialQ::sturm(seq,6,8)) << endl;
+            cout << endl << endl;
+            vector<Algebraic> alphas =
+                PolynomialQ::FindRootsOfIrreducible(PolynomialQ("x*x-2"));
+            cout << "Number of alphas: " << alphas.size() << endl;
+            BOOST_FOREACH(const Algebraic & alpha, alphas)
+                cout << alpha << endl;
+            alphas =
+                PolynomialQ::FindRootsOfIrreducible(PolynomialQ("x*x-3"));
+            cout << "Number of alphas: " << alphas.size() << endl;
+            BOOST_FOREACH(const Algebraic & alpha, alphas)
+                cout << alpha << endl;
+            alphas =
+                PolynomialQ::FindRootsOfIrreducible(PolynomialQ("x*x-5"));
+            cout << "Number of alphas: " << alphas.size() << endl;
+            BOOST_FOREACH(const Algebraic & alpha, alphas)
+                cout << alpha << endl;
+            alphas =
+                PolynomialQ::FindRootsOfIrreducible(PolynomialQ("x^2+x+10"));
+            cout << "Number of alphas: " << alphas.size() << endl;
+            BOOST_FOREACH(const Algebraic & alpha, alphas)
+                cout << alpha << endl;
+        }
+/*
+        boost::tuple<Algebraic, PolynomialQ, PolynomialQ> t =
+            PolynomialQQ::Simple(alpha, beta);
+
+        cout << t.get<0>() << endl;
+        cout << t.get<1>() << endl;
+        cout << t.get<2>() << endl;
+*/
+//        Algebraic gamma = PolynomialQQ::ANComb(alpha, beta, 1);
+
+//        cout << gamma << endl;
     }
     catch (exception & e)
     {

@@ -43,12 +43,11 @@ CAD::CAD(const std::vector<std::string> & F)
             std::vector<char> signs(this->F.size()); // allocates 'size' of
             										 // these up front.
 
-            /*for (std::vector<char>::size_type i = 0;
+            for (std::vector<char>::size_type i = 0;
                  i < this->F.size();
                  i++)
-                //signs[i] = Sign(numbers, (this->F)[i]);
-                //signs[i] = this->F[i].signAt(alpha, beta);
-*/
+                 signs[i] = this->F[i].signAt(alpha, beta);
+
             T.push_back(Sample(beta, signs));
         }
     }
