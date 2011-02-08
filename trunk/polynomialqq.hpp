@@ -87,14 +87,15 @@ public:
     inline bool operator==(const PolynomialQQ & rhs) const;
     inline bool operator!=(const PolynomialQQ & rhs) const;
 
-protected:
+//protected:
 
-    static Algebraic
-        ANComb(const Algebraic & alpha, const Algebraic & beta, int t);
+    static Algebraic ANComb(Algebraic alpha,
+                            Algebraic beta,
+                            const GiNaC::numeric & t);
     static boost::tuple<Algebraic, PolynomialQ, PolynomialQ>
         Simple(const Algebraic & alpha, const Algebraic & beta);
 
-    GiNaC::ex gcdex(GiNaC::ex f,
+    static GiNaC::ex gcdex(GiNaC::ex f,
                     GiNaC::ex g,
                     const GiNaC::symbol & var,
                     GiNaC::ex & c1,

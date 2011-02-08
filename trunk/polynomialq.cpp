@@ -58,7 +58,7 @@ PolynomialQ::PolynomialQ(const GiNaC::ex & e)
     : polynomial(e)
 {
     if (!Invariants())
-        throw std::invalid_argument("PolynomialQ Constructor: GiNaC expression"
+        throw std::invalid_argument("PolynomialQ Constructor: GiNaC expression "
         							"e is not a valid polynomial.");
 }
 
@@ -69,7 +69,7 @@ PolynomialQ::PolynomialQ(const GiNaC::numeric & n)
     : polynomial(n)
 {
     if (!Invariants())
-        throw std::invalid_argument("PolynomialQ Constructor: GiNaC numeric"
+        throw std::invalid_argument("PolynomialQ Constructor: GiNaC numeric "
         							"n is not a valid rational number.");
 }
 
@@ -283,10 +283,49 @@ std::vector<PolynomialQ> PolynomialQ::getIrreducibleFactors() const
 {
     assert(Invariants());
 
-    GiNaC::ex p = factor(polynomial);
-
     std::vector<PolynomialQ> factors; // Make a comparison function and change
     								  // this to use a set.
+
+    // 0
+    // 1
+    // -1
+    // 11
+    // -11
+    // x - 1
+    // -x - 1
+    // 2*x + 2
+    // x^2 + 1
+    // 2*x^2 + 1
+    // x^2 - 5*x + 6
+
+/*  if (this->degree() <= 2)
+    {
+        if (this->degree() == 1)
+        {
+            factors.push_back(this->getMonic());
+            return factors;
+        }
+        else if (this->degree() <= 0)
+            return factors;
+
+        GiNaC::numeric a = this->getCoeff(2);
+        GiNaC::numeric b = this->getCoeff(1);
+        GiNaC::numeric c = this->getCoeff(0);
+
+        if (!((-b + GiNaC::sqrt(b*b - 4*a*c))/(2*a)).is_rational())
+        {
+            factors.push_back(this->getMonic());
+            return factors;
+        }
+    }*/
+
+    GiNaC::ex p = GiNaC::factor(polynomial);
+
+    if (!GiNaC::is_a<GiNaC::mul>(p))
+    {
+        factors.push_back(this->getMonic());
+        return factors;
+    }
 
     for (GiNaC::const_iterator i = p.begin(); i != p.end(); i++)
     {
@@ -357,9 +396,7 @@ GiNaC::numeric PolynomialQ::eval(const GiNaC::numeric & value) const
 
     assert(GiNaC::is_a<GiNaC::numeric>(temp));
 
-    return GiNaC::ex_to<GiNaC::numeric>(temp); // Will this work? ex_to returns
-    										   // a reference.  Hopefully a new
-    										   // object is created.
+    return GiNaC::numeric(GiNaC::ex_to<GiNaC::numeric>(temp));
 }
 
 /*!
@@ -396,7 +433,14 @@ std::vector<Algebraic> PolynomialQ::FindRoots(const std::vector<PolynomialQ> P)
 
             numberSet.insert(alpha);
         }
-        else if (f.degree() == 2)
+        else
+        {
+            //std::vector<IntervalQ> intervals = PolynomialQ::BoundRealRoots(f);
+            std::vector<Algebraic> nums = PolynomialQ::FindRootsOfIrreducible(f);
+
+            numberSet.insert(nums.begin(), nums.end());
+        }
+        /*else if (f.degree() == 2)
         {
             const GiNaC::numeric b = f.getCoeff(1);
             const GiNaC::numeric c = f.getCoeff(0);
@@ -435,18 +479,160 @@ std::vector<Algebraic> PolynomialQ::FindRoots(const std::vector<PolynomialQ> P)
 
             	numberSet.insert(alpha);
             }
-        }
-        else
-            throw std::runtime_error("PolynomialQ::FindRoots: Got a factor not"
-                                     "of degree 1 or 2.");
+        }*/
     }
 
     std::vector<Algebraic> numbers(numberSet.begin(), numberSet.end());
 
-    for (std::vector<Algebraic>::size_type i = 0; i < numbers.size()-1; i++)
+    if (numbers.size() > 1)
+        for (std::vector<Algebraic>::size_type i = 0; i < numbers.size()-1; i++)
+            Algebraic::SeparateIntervals(numbers[i], numbers[i+1]);
+
+    return numbers;
+}
+
+/*!
+ * \param p Must be irreducible.
+ * \todo Make this static.
+ * \todo Does irreducible include 0? 1? any constant?
+ */
+//std::vector<IntervalQ> PolynomialQ::BoundRealRoots(const PolynomialQ & p)
+std::vector<Algebraic>
+    PolynomialQ::FindRootsOfIrreducible(const PolynomialQ & p)
+{
+    // Assuming degree >= 1.
+    std::vector<PolynomialQ> F = PolynomialQ::sturmseq(p);
+
+    GiNaC::numeric R = 0;
+
+    for (unsigned int i = 0; i < p.degree(); i++)
+        if (GiNaC::abs(p.getCoeff(i)) > R)
+            R = GiNaC::abs(p.getCoeff(i));
+
+    R /= GiNaC::abs(p.getCoeff(p.degree()));
+    R += 1;
+
+    GiNaC::numeric L = -R, U = R;
+    GiNaC::numeric numroots = PolynomialQ::sturm(F, L, U), roots, L1, U1, NU;
+
+    std::vector<Algebraic> numbers;
+
+    if (numroots == 0)
+        return numbers;
+
+    numbers.reserve(numroots.to_int());
+
+    while (true)
+    {
+        numroots = PolynomialQ::sturm(F, L, U);
+
+        if (numroots == 1)
+        {
+            numbers.push_back(Algebraic(p, IntervalQ(L, U)));
+            break;
+        }
+
+        L1 = L;
+        U1 = U;
+
+        while (true)
+        {
+            NU = (L1+U1)/2;
+            roots = PolynomialQ::sturm(F,L1,NU);
+
+            if (roots < numroots)
+            {
+                if (roots == 1)
+                {
+                    numbers.push_back(Algebraic(p, IntervalQ(L, NU)));
+                    U1 = NU;
+                    break;
+                }
+                else if (roots == 0)
+                    L1 = NU;
+                else
+                    U1 = NU;
+            }
+            else
+                U1 = NU;
+        }
+
+        L = U1;
+    }
+
+    for (unsigned int i = 0; i < numbers.size()-1; i++)
         Algebraic::SeparateIntervals(numbers[i], numbers[i+1]);
 
     return numbers;
+}
+
+std::vector<PolynomialQ> PolynomialQ::sturmseq(const PolynomialQ & p)
+{
+    std::vector<PolynomialQ> F;
+    F.reserve(p.degree()+2);
+    F.push_back(p);
+    F.push_back(p.getDerivative());
+
+    while (!F.back().isZero())
+        F.push_back((F[F.size()-2] % F.back())*(-1));
+    F.pop_back();
+
+    return F;
+}
+
+/*!
+ * \detail a < b.
+ */
+GiNaC::numeric PolynomialQ::sturm(const std::vector<PolynomialQ> & F,
+                                  const GiNaC::numeric & a,
+                                  const GiNaC::numeric & b)
+{
+    GiNaC::numeric f2 = F[0].eval(a), g2 = F[0].eval(b);
+    GiNaC::numeric fa = F[1].eval(a), gb = F[1].eval(b);
+    GiNaC::numeric va = 0,            vb = 0;
+
+    if (f2 != 0) // if == 0 then do nothing
+    {
+    	if (fa == 0)
+    		fa == f2;
+    	else
+    		if (fa*f2 < 0) //(csgn(fa) != csgn(f2))
+    			va = 1;
+    }
+
+    if (g2 != 0) // if == 0 then do nothing
+    {
+    	if (gb == 0)
+    		gb == g2;
+    	else
+    		if (gb*g2 < 0) //(csgn(gb) != csgn(g2))
+    			vb = 1;
+    }
+
+    for (unsigned int i = 2; i < F.size(); i++)
+    {
+    	GiNaC::numeric alpha = F[i].eval(a), beta = F[i].eval(b);
+
+    	if (alpha != 0)
+    	{
+    		if (fa != 0)
+    			if (alpha *fa < 0) //(csgn(alpha) != csgn(fa))
+    				va++;
+    		fa = alpha;
+    	}
+
+    	if (beta != 0)
+    	{
+    		if (gb != 0)
+    			if (beta*gb < 0) //(csgn(beta) != csgn(gb))
+    				vb++;
+    		gb = beta;
+    	}
+    }
+
+    assert((va-vb).is_nonneg_integer());
+
+    return (va - vb);
 }
 
 /*!

@@ -47,7 +47,7 @@ PolynomialQQ::PolynomialQQ(const GiNaC::ex & e)
     : polynomial(e)
 {
     if (!Invariants())
-        throw std::invalid_argument("PolynomialQQ Constructor: GiNaC expression"
+        throw std::invalid_argument("PolynomialQQ Constructor: GiNaC expression "
         							"e is not a valid polynomial.");
 }
 
@@ -55,7 +55,7 @@ PolynomialQQ::PolynomialQQ(const GiNaC::numeric & n)
     : polynomial(n)
 {
     if (!Invariants())
-        throw std::invalid_argument("PolynomialQQ Constructor: GiNaC numeric"
+        throw std::invalid_argument("PolynomialQQ Constructor: GiNaC numeric "
         							"n is not a valid rational number.");
 }
 /*
@@ -233,8 +233,8 @@ int PolynomialQQ::signAt(const Algebraic & alpha, const Algebraic & beta) const
     PolynomialQ & s1    = t.get<1>();
     PolynomialQ & s2    = t.get<2>();
 
-    PolynomialQ h(polynomial.subs(
-                        GiNaC::lst(var1 == s1.getEx(), var2 == s2.getEx())));
+    PolynomialQ h(polynomial.subs(GiNaC::lst(var1 == s1.getEx(),
+                                             var2 == s2.getEx())));
 
     return h.signAt(gamma);
 
@@ -410,27 +410,31 @@ PolynomialQQ PolynomialQQ::operator*(const PolynomialQQ & rhs) const {
 	return PolynomialQQ(expand(polynomial * rhs.polynomial));
 }
 
-Algebraic
-    PolynomialQQ::ANComb(const Algebraic & alpha, const Algebraic & beta, int t)
+Algebraic PolynomialQQ::ANComb(Algebraic alpha,
+                               Algebraic beta,
+                               const GiNaC::numeric & t)
 {
-    Algebraic a(alpha), b(beta);
-    GiNaC::ex polya = a.getEx();
-    GiNaC::symbol tmp, var(a.getPolynomial().getVariable());;
+    GiNaC::ex polya = alpha.getEx();
+    GiNaC::symbol tmp, var(alpha.getPolynomial().getVariable());;
 
-    GiNaC::ex res = resultant(polya.subs(var == tmp - var*t),
-                              b.getEx(), var);
-    res = res.subs(tmp == var);
+    GiNaC::ex res = resultant(polya.subs(var == tmp - var*t).expand(),
+                              beta.getEx(), var);
 
-    PolynomialQ r(res); // throws on error
-
+    PolynomialQ r(res.subs(tmp == var)); // throws on error
+std::cout << r << std::endl;
+std::vector<PolynomialQ> temp = r.getIrreducibleFactors();
+std::cout << temp.size() << std::endl;
+BOOST_FOREACH(const PolynomialQ & p, temp)
+    std::cout << p << std::endl;
     std::vector<Algebraic> gammas =
     	PolynomialQ::FindRoots(r.getIrreducibleFactors());
-
-    // maybe declare a & b here
-
+std::cout << gammas.size() << std::endl;
+BOOST_FOREACH(const Algebraic & gamma, gammas)
+    std::cout << gamma << std::endl;
     while (true)
     {
-        IntervalQ IJ = a.getInterval() + b.getInterval()*GiNaC::numeric(t);
+        IntervalQ IJ = alpha.getInterval() +
+            IntervalQ(beta.lower()*t, beta.upper()*t);//beta.getInterval()*t;
 
         BOOST_FOREACH(const Algebraic & gamma, gammas)
         {
@@ -440,18 +444,10 @@ Algebraic
                 return gamma;
         }
 
-        a.tightenInterval();
-        b.tightenInterval();
+        alpha.tightenInterval();
+        beta.tightenInterval();
     }
-
-    assert(false);
-    throw std::runtime_error("ANComb error. This point should not have been"
-    						 "reached");
-
-    return Algebraic();
-
-/*
- A := alpha[2]; // A = [ [l, u], poly ]
+/*A := alpha[2]; // A = [ [l, u], poly ]
  B := beta[2];
  u := Var(A);
  v := Var(B);
@@ -471,41 +467,55 @@ Algebraic
    alphap := TightenInterval(alphap);
    betap  := TightenInterval(betap);
  od; */
+    assert(false);
+    throw std::runtime_error("ANComb error. This point should not have been"
+    						 "reached");
+
+    return Algebraic();
 }
 
 boost::tuple<Algebraic, PolynomialQ, PolynomialQ>
     PolynomialQQ::Simple(const Algebraic & alpha, const Algebraic & beta)
 {
-    GiNaC::symbol var = alpha.getPolynomial().getVariable();
-    GiNaC::symbol tmp;
+    GiNaC::ex A(alpha.getEx());
+    GiNaC::ex B;
+
+    GiNaC::symbol u = alpha.getPolynomial().getVariable();
+    GiNaC::symbol v; // makes a new, unique symbol
+    GiNaC::symbol w = u;
+
+    B = beta.getEx().subs(u == v);
+
+    GiNaC::numeric t = 1;
+
+    GiNaC::symbol _z;
+    GiNaC::ex C;
     GiNaC::ex s1;
+    GiNaC::ex c1, c2;
     GiNaC::ex g;
+
     Algebraic gamma;
-    int t = 1;
 
     while (true)
     {
-        gamma = PolynomialQQ::ANComb(alpha, beta, t);
-        s1 = PolynomialQQ::sres(
-                            alpha.getEx().subs(var == tmp - var*t),
-                            beta.getEx(),
-                            1,
-                            var);
+        gamma = ANComb(alpha, beta, t);
+        C = gamma.getEx().subs(w == _z);
+        s1 = PolynomialQQ::sres(A.subs(u == _z - t*v), B, 1, v);
+        g = PolynomialQQ::gcdex(C, s1.coeff(v, 1), _z, c1, c2);
 
-        // s1 is now a polynomial in 'tmp'.
-
-        //g = gcdex(gamma.getEx().subs(gamma.getPolynomial().getVariable() == s1.coeff(tmp, 1))
-
-        if (g.degree() == 0)
+        if (g.degree(_z) == 0)
             break;
 
-        t++;
+        t += 1;
     }
 
-    PolynomialQ T(s1.coeff(alpha.getPolynomial().getVariable(), 0));
-    PolynomialQ S(T.getVariable() - T.getEx()*t);
+    GiNaC::ex T = GiNaC::rem(-s1.coeff(v, 0) * c2 / g, C, _z);
+    GiNaC::ex S = _z - t*T;
 
-    return boost::make_tuple(gamma,S, T);
+    S = S.subs(_z == w);
+    T = T.subs(_z == w);
+
+    return boost::make_tuple(gamma, PolynomialQ(S), PolynomialQ(T));
 
 /* A := alpha[2];
  B := beta[2];
