@@ -113,14 +113,20 @@ int main()
     // Code for CAD stuff /////////////////////////////////////////////////////
 
     try
-    {/*
+    {
         vector<string> F;
-        F.push_back("x^2+y^2-4");
-        F.push_back("x+y");
+        //F.push_back("x^2+y^2-4");
+        //F.push_back("x+y");
+        //F.push_back("x-y");
+        //F.push_back("x+y");
+        //F.push_back("x^2+y^2-1");
+        //F.push_back("2*x+3*y^2-2");
+        F.push_back("-x+y^2");
+        F.push_back("x-y-5");
 
         CAD mainCAD(F);
 
-        mainCAD.out();*/
+        mainCAD.out();
 /*
         Algebraic alpha(PolynomialQ("x^2-2"), IntervalQ(1, 2));
         Algebraic beta(PolynomialQ("x^2-3"), IntervalQ(1, 2));
@@ -150,7 +156,7 @@ GiNaC::symbol v = alpha.getPolynomial().getVariable();
             cout << "Is gfac a mul?" << (is_a<mul>(gfac) ? "Yes" : "No") << endl;
             cout << "****************" << endl;
         }*/
-        {
+        /*{
             PolynomialQ p("(x-3)*(x-5)*(x-7)");
             cout << p << endl;
             vector<PolynomialQ> seq = PolynomialQ::sturmseq(p);
@@ -182,7 +188,19 @@ GiNaC::symbol v = alpha.getPolynomial().getVariable();
             cout << "Number of alphas: " << alphas.size() << endl;
             BOOST_FOREACH(const Algebraic & alpha, alphas)
                 cout << alpha << endl;
-        }
+            cout << "**** FindRoots Test **************************" << endl;
+            vector<PolynomialQ> plist;
+            plist.push_back(PolynomialQ("(x-3)*(x-7)*(x-11)"));
+            alphas = PolynomialQ::FindRoots(plist);
+            cout << "Number of alphas: " << alphas.size() << endl;
+            BOOST_FOREACH(const Algebraic & alpha, alphas)
+                cout << alpha << endl;
+            plist.push_back(PolynomialQ("x^2-2"));
+            alphas = PolynomialQ::FindRoots(plist);
+            cout << "Number of alphas: " << alphas.size() << endl;
+            BOOST_FOREACH(const Algebraic & alpha, alphas)
+                cout << alpha << endl;
+        }*/
 /*
         boost::tuple<Algebraic, PolynomialQ, PolynomialQ> t =
             PolynomialQQ::Simple(alpha, beta);

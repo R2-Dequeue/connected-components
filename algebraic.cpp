@@ -7,6 +7,17 @@
 
 #include <cassert>
 
+Algebraic::Algebraic(const PolynomialQ & p, const IntervalQ & i)
+    : polynomial(p), rootinterval(i)
+{
+    if (!Invariants())
+    {
+        std::cout << "crap";
+
+    }
+    assert(Invariants());
+};
+
 inline GiNaC::numeric Algebraic::lower() const
 {
     assert(Invariants());

@@ -94,6 +94,8 @@ public:
                             const GiNaC::numeric & t);
     static boost::tuple<Algebraic, PolynomialQ, PolynomialQ>
         Simple(const Algebraic & alpha, const Algebraic & beta);
+    static boost::tuple<Algebraic, PolynomialQ, PolynomialQ>
+        Simple2(const Algebraic & alpha, const Algebraic & beta);
 
     static GiNaC::ex gcdex(GiNaC::ex f,
                     GiNaC::ex g,
