@@ -36,12 +36,11 @@ private:
 public:
 
     //! The default constructor.
-    Algebraic() : polynomial(GiNaC::numeric(0)), rootinterval(0,0) {};
+    Algebraic() : polynomial(GiNaC::ex(PolynomialQ::GetVar())), rootinterval(0,0) {};
     //~Algebraic();
 
     //! Basic constructor to assemble an algebraic number.
-    Algebraic(const PolynomialQ & p, const IntervalQ & i)
-        : polynomial(p), rootinterval(i) { assert(Invariants()); };
+    Algebraic(const PolynomialQ & p, const IntervalQ & i);
 
     // can I make a constructor that will only take STATIC ints or longs?
     // (for initialization).

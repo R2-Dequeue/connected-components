@@ -359,7 +359,7 @@ int PolynomialQ::signAt(const Algebraic & a) const
 
     PolynomialQ remainder(*this % a.polynomial);
 
-    if (remainder == 0)
+    if (remainder.isZero())
         return 0;
 
     Algebraic alpha(a);

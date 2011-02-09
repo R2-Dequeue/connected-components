@@ -47,7 +47,7 @@ public:
 	bool isConstant() const;
 
 	GiNaC::symbol getVariable() const   { return variable; }
-	//GiNaC::symbol getVar() const        { return variable; }
+	static GiNaC::symbol GetVar() { return variable; }
 	GiNaC::ex getEx() const
         { assert(Invariants()); return polynomial; }
 

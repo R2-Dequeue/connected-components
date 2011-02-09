@@ -230,11 +230,11 @@ int PolynomialQQ::signAt(const Algebraic & alpha, const Algebraic & beta) const
     boost::tuple<Algebraic, PolynomialQ, PolynomialQ> t =
         PolynomialQQ::Simple(alpha, beta);
     Algebraic & gamma   = t.get<0>();
-    PolynomialQ & s1    = t.get<1>();
-    PolynomialQ & s2    = t.get<2>();
+    PolynomialQ & S    = t.get<1>();
+    PolynomialQ & T    = t.get<2>();
 
-    PolynomialQ h(polynomial.subs(GiNaC::lst(var1 == s1.getEx(),
-                                             var2 == s2.getEx())));
+    PolynomialQ h(polynomial.subs(GiNaC::lst(var1 == S.getEx(),
+                                             var2 == T.getEx())).expand());
 
     return h.signAt(gamma);
 
@@ -421,16 +421,10 @@ Algebraic PolynomialQQ::ANComb(Algebraic alpha,
                               beta.getEx(), var);
 
     PolynomialQ r(res.subs(tmp == var)); // throws on error
-std::cout << r << std::endl;
-std::vector<PolynomialQ> temp = r.getIrreducibleFactors();
-std::cout << temp.size() << std::endl;
-BOOST_FOREACH(const PolynomialQ & p, temp)
-    std::cout << p << std::endl;
+
     std::vector<Algebraic> gammas =
     	PolynomialQ::FindRoots(r.getIrreducibleFactors());
-std::cout << gammas.size() << std::endl;
-BOOST_FOREACH(const Algebraic & gamma, gammas)
-    std::cout << gamma << std::endl;
+
     while (true)
     {
         IntervalQ IJ = alpha.getInterval() +
@@ -476,6 +470,22 @@ BOOST_FOREACH(const Algebraic & gamma, gammas)
 
 boost::tuple<Algebraic, PolynomialQ, PolynomialQ>
     PolynomialQQ::Simple(const Algebraic & alpha, const Algebraic & beta)
+{
+    boost::tuple<Algebraic, PolynomialQ, PolynomialQ> t =
+        Simple2(beta, alpha);
+
+    Algebraic & gamma = t.get<0>();
+    PolynomialQ & S = t.get<1>();
+    PolynomialQ & T = t.get<2>();
+
+    return boost::make_tuple(gamma, T % gamma.getPolynomial(), S);
+// Simple(alpha, beta)
+//      gamma, S,T := Simple2(beta,alpha);
+//      return gamma, T % gamma.getPolynomial(), S;
+}
+
+boost::tuple<Algebraic, PolynomialQ, PolynomialQ>
+    PolynomialQQ::Simple2(const Algebraic & alpha, const Algebraic & beta)
 {
     GiNaC::ex A(alpha.getEx());
     GiNaC::ex B;
@@ -600,18 +610,18 @@ GiNaC::ex PolynomialQQ::sres(const GiNaC::ex & f,
     for (       int i = 1;      i <= n-k;           i++)
         for (   int j = 1;      j <= n+m-2*k-1;     j++)
 
-            M(i, j) = f.coeff(var, m-j+i);
+            M(i-1, j-1) = f.coeff(var, m-j+i);
 
     for (       int i = n-k+1;  i <= n+m-2*k;       i++)
         for (   int j = 1;      j <= n+m-2*k-1;     j++)
 
-            M(i, j) = g.coeff(var, n-j+(i-(n-k)));
+            M(i-1, j-1) = g.coeff(var, n-j+(i-(n-k)));
 
     for (int i = 1;         i <= n-k;       i++)
-        M(i, n+m-2*k) = pow(var, n-k-i)             *f;
+        M(i-1, n+m-2*k-1) = pow(var, n-k-i)             *f;
 
     for (int i = n-k+1;     i <= n+m-2*k;   i++)
-        M(i, n+m-2*k) = pow(var, m-k-(i-(n-k)))     *g;
+        M(i-1, n+m-2*k-1) = pow(var, m-k-(i-(n-k)))     *g;
 
     return M.determinant();
 
