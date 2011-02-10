@@ -420,20 +420,29 @@ std::vector<Algebraic>
         fs *= f;
 
     assert(!fs.isZero());
-
+/**/std::cout << "fs: " << fs << std::endl;
     // make a conversion operator from PolyQ to PolyQQ for alpha.
     // maybe PolynomialQ::getPolynomialQQ?
-    PolynomialQ r = PolynomialQQ::Resultant(PolynomialQQ(alpha.getPolynomial().getEx()),
-    										fs,
-    										1);
-
+    PolynomialQ r(PolynomialQQ::Resultant(PolynomialQQ(alpha.getPolynomial().getEx()),
+                                          fs,
+                                          1));
+/**/std::cout << "r: " << r << std::endl;
     std::vector<Algebraic> P = PolynomialQ::FindRoots(r.getIrreducibleFactors());
     std::vector<Algebraic> R;
     R.reserve(P.size());
-
+std::cout << "Size of P: " << P.size() << std::endl;
+BOOST_FOREACH(const Algebraic & p, P)
+std::cout << p << std::endl;
+std::cout << "R's: " << std::endl;
+    // Why did I add this step? Can't remember, but removing it breaks the code.
     BOOST_FOREACH(const Algebraic & p, P)
-        //if (fs.signAt(alpha, p) == 0)
+    {
+        if (fs.signAt(alpha, p) == 0)
+        {
+            std::cout << p << std::endl;
             R.push_back(p);
+        }
+    }
 
     return R;
 

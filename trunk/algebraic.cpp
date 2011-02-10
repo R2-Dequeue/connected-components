@@ -10,13 +10,8 @@
 Algebraic::Algebraic(const PolynomialQ & p, const IntervalQ & i)
     : polynomial(p), rootinterval(i)
 {
-    if (!Invariants())
-    {
-        std::cout << "crap";
-
-    }
     assert(Invariants());
-};
+}
 
 inline GiNaC::numeric Algebraic::lower() const
 {
@@ -92,7 +87,7 @@ Algebraic & Algebraic::tightenInterval()
         rootinterval.assign((l+m)/2, (u+m)/2);
     else
     {
-        GiNaC::ex num = sample * polynomial.eval(rootinterval.upper());
+        GiNaC::ex num = sample * polynomial.eval(u);
 
         if (num <= 0)
             rootinterval.assign(m, u);

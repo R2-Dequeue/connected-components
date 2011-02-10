@@ -102,12 +102,13 @@ bool PolynomialQ::isZero() const
 	return (polynomial.is_zero()); // (polynomial == 0);
 }
 
+/*!
+ * \todo Are constants irreducible?
+ * \todo This check is horribly inefficient; fix it.
+ */
 bool PolynomialQ::isIrreducible() const
 {
 	assert(Invariants());
-
-	if (this->degree() > 2)
-		return false;
 
 	// Assuming getIrreducibleFactors ignores constant factors.
 	if (this->getIrreducibleFactors().size() > 1)
@@ -228,7 +229,7 @@ unsigned int PolynomialQ::sturm(const GiNaC::numeric & a,
     	if (fa == 0)
     		fa == f2;
     	else
-    		if (csgn(fa) != csgn(f2))
+    		if (GiNaC::csgn(fa) != GiNaC::csgn(f2))
     			va = 1;
     }
 
@@ -237,7 +238,7 @@ unsigned int PolynomialQ::sturm(const GiNaC::numeric & a,
     	if (gb == 0)
     		gb == g2;
     	else
-    		if (csgn(gb) != csgn(g2))
+    		if (GiNaC::csgn(gb) != GiNaC::csgn(g2))
     			vb = 1;
     }
 
@@ -249,7 +250,7 @@ unsigned int PolynomialQ::sturm(const GiNaC::numeric & a,
     	if (alpha != 0)
     	{
     		if (fa != 0)
-    			if (csgn(alpha) != csgn(fa))
+    			if (GiNaC::csgn(alpha) != GiNaC::csgn(fa))
     				va++;
     		fa = alpha;
     	}
@@ -257,7 +258,7 @@ unsigned int PolynomialQ::sturm(const GiNaC::numeric & a,
     	if (beta != 0)
     	{
     		if (gb != 0)
-    			if (csgn(beta) != csgn(gb))
+    			if (GiNaC::csgn(beta) != GiNaC::csgn(gb))
     				vb++;
     		gb = beta;
     	}
@@ -285,7 +286,6 @@ std::vector<PolynomialQ> PolynomialQ::getIrreducibleFactors() const
 
     std::vector<PolynomialQ> factors; // Make a comparison function and change
     								  // this to use a set.
-
     // 0
     // 1
     // -1
@@ -297,27 +297,6 @@ std::vector<PolynomialQ> PolynomialQ::getIrreducibleFactors() const
     // x^2 + 1
     // 2*x^2 + 1
     // x^2 - 5*x + 6
-
-/*  if (this->degree() <= 2)
-    {
-        if (this->degree() == 1)
-        {
-            factors.push_back(this->getMonic());
-            return factors;
-        }
-        else if (this->degree() <= 0)
-            return factors;
-
-        GiNaC::numeric a = this->getCoeff(2);
-        GiNaC::numeric b = this->getCoeff(1);
-        GiNaC::numeric c = this->getCoeff(0);
-
-        if (!((-b + GiNaC::sqrt(b*b - 4*a*c))/(2*a)).is_rational())
-        {
-            factors.push_back(this->getMonic());
-            return factors;
-        }
-    }*/
 
     GiNaC::ex p = GiNaC::factor(polynomial);
 
@@ -440,46 +419,6 @@ std::vector<Algebraic> PolynomialQ::FindRoots(const std::vector<PolynomialQ> P)
 
             numberSet.insert(nums.begin(), nums.end());
         }
-        /*else if (f.degree() == 2)
-        {
-            const GiNaC::numeric b = f.getCoeff(1);
-            const GiNaC::numeric c = f.getCoeff(0);
-            const GiNaC::numeric discriminant = b*b - 4*c;
-
-            if (discriminant > 0) // ==> We have real roots.
-            {
-                const GiNaC::numeric left = -b/2;
-                const GiNaC::numeric right = discriminant / 4;
-                // Note: the above is always > 0.
-
-                Algebraic alpha;
-                Algebraic beta;
-
-                if (right > 1)
-                {
-                    alpha = Algebraic(f, IntervalQ( left,       left+right	));
-                    beta  = Algebraic(f, IntervalQ( left-right, left		));
-                }
-                else
-                {
-                    alpha = Algebraic(f, IntervalQ( left,       left+1	));
-                    beta  = Algebraic(f, IntervalQ( left-1,     left	));
-                }
-
-                Algebraic::SeparateIntervals(alpha, beta);
-
-                numberSet.insert(alpha);
-                numberSet.insert(beta);
-            }
-            else if (discriminant == 0) // ==> Just one (real) root.
-            {
-            	const GiNaC::numeric root = -b/2;
-
-            	Algebraic alpha(f.getVariable() - root, IntervalQ(root , root));
-
-            	numberSet.insert(alpha);
-            }
-        }*/
     }
 
     std::vector<Algebraic> numbers(numberSet.begin(), numberSet.end());
@@ -692,6 +631,7 @@ IntervalQ PolynomialQ::boundRange(const IntervalQ & interval) const
 
     assert(range.lower().is_rational());
     assert(range.upper().is_rational());
+    assert(range.lower() <= range.upper());
 
     return range;
 }

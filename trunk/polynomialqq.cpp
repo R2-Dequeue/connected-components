@@ -295,8 +295,7 @@ PolynomialQ PolynomialQQ::Resultant(const PolynomialQQ & f,
     if (var == 1)
         res = res.subs(var2 == var1);
 
-    return PolynomialQ(res); // Hoping constructor will be called and check
-                             // Invariants().
+    return PolynomialQ(res);
 }
 
 /*!
@@ -361,8 +360,8 @@ bool PolynomialQQ::Invariants() const
     if (!polynomial.info(info_flags::rational_polynomial))
         return false;
 
-    if (polynomial == ex()) // should always be at least 'ex(0)'.
-        return false;
+    //if (polynomial == ex()) // should always be at least 'ex(0)'.
+    //    return false;
 
     int deg1 = polynomial.degree(var1);
 
@@ -414,28 +413,37 @@ Algebraic PolynomialQQ::ANComb(Algebraic alpha,
                                Algebraic beta,
                                const GiNaC::numeric & t)
 {
+/**///std::cout << "**** ANComb **** A *******************" << std::endl;
+/**///std::cout << "Alpha: " << alpha << std::endl;
+/**///std::cout << "Beta: " << beta << std::endl;
+/**///std::cout << "t: " << GiNaC::ex(t) << std::endl;
     GiNaC::ex polya = alpha.getEx();
     GiNaC::symbol tmp, var(alpha.getPolynomial().getVariable());;
 
     GiNaC::ex res = resultant(polya.subs(var == tmp - var*t).expand(),
                               beta.getEx(), var);
-
+/**///std::cout << "res: " << res << std::endl;
     PolynomialQ r(res.subs(tmp == var)); // throws on error
-
+/**///std::cout << "r: " << r << std::endl;
     std::vector<Algebraic> gammas =
     	PolynomialQ::FindRoots(r.getIrreducibleFactors());
-
+/**///std::cout << "Size of gammas: " << gammas.size() << std::endl;
+/**///BOOST_FOREACH(const Algebraic & gamma, gammas)
+/**///    std::cout << "    " << gamma << std::endl;
     while (true)
     {
-        IntervalQ IJ = alpha.getInterval() +
-            IntervalQ(beta.lower()*t, beta.upper()*t);//beta.getInterval()*t;
+        IntervalQ IJ(alpha.lower() + t*beta.lower(),
+                     alpha.upper() + t*beta.upper());
 
         BOOST_FOREACH(const Algebraic & gamma, gammas)
         {
             IntervalQ K = gamma.getInterval();
 
             if (K.lower() <= IJ.lower() && IJ.upper() <= K.upper())
+            {
+/**///std::cout << "**** ANComb **** B *******************" << std::endl;
                 return gamma;
+            }
         }
 
         alpha.tightenInterval();
@@ -474,9 +482,9 @@ boost::tuple<Algebraic, PolynomialQ, PolynomialQ>
     boost::tuple<Algebraic, PolynomialQ, PolynomialQ> t =
         Simple2(beta, alpha);
 
-    Algebraic & gamma = t.get<0>();
-    PolynomialQ & S = t.get<1>();
-    PolynomialQ & T = t.get<2>();
+    Algebraic &     gamma   = t.get<0>();
+    PolynomialQ &   S       = t.get<1>();
+    PolynomialQ &   T       = t.get<2>();
 
     return boost::make_tuple(gamma, T % gamma.getPolynomial(), S);
 // Simple(alpha, beta)
@@ -504,11 +512,11 @@ boost::tuple<Algebraic, PolynomialQ, PolynomialQ>
     GiNaC::ex c1, c2;
     GiNaC::ex g;
 
-    Algebraic gamma;
+    Algebraic gamma = Algebraic();
 
     while (true)
     {
-        gamma = ANComb(alpha, beta, t);
+        gamma = PolynomialQQ::ANComb(alpha, beta, t);
         C = gamma.getEx().subs(w == _z);
         s1 = PolynomialQQ::sres(A.subs(u == _z - t*v), B, 1, v);
         g = PolynomialQQ::gcdex(C, s1.coeff(v, 1), _z, c1, c2);
