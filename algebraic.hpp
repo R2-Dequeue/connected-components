@@ -36,8 +36,8 @@ private:
 public:
 
     //! The default constructor.
-    Algebraic() : polynomial(GiNaC::ex(PolynomialQ::GetVar())), rootinterval(0,0) {};
-    //~Algebraic();
+    Algebraic()
+        : polynomial(GiNaC::ex(PolynomialQ::GetVar())), rootinterval(-1, 1) {};
 
     //! Basic constructor to assemble an algebraic number.
     Algebraic(const PolynomialQ & p, const IntervalQ & i);
@@ -54,10 +54,14 @@ public:
 
     int compare(const Algebraic & B) const; //!< Compare this number with another.
     Algebraic & tightenInterval(); //!< Shrinks the interval to a proper subset.
-    double Approximate() const; //!< A floating point approximation of this number.
+    GiNaC::numeric Approximate() const; //!< A floating point approximation of this number.
 
     //! Shrinks the internal intervals of a & b so that they don't intersect.
     static void SeparateIntervals(Algebraic & a, Algebraic & b);
+
+    static Algebraic MakeRational(const GiNaC::numeric & a);
+
+    static const GiNaC::numeric delta;
 
     /*!
      * \brief Helper method for internal 'assert' checks.

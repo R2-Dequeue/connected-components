@@ -65,6 +65,8 @@ int Algebraic::compare(const Algebraic & B) const
 
             if (a.upper() < b.lower())
                 return -1;
+
+            a.tightenInterval();
         }
     }
 
@@ -115,35 +117,16 @@ Algebraic & Algebraic::tightenInterval()
 
 /*!
  * \todo Double check that the max degree of an irreducible polynomial over
- *		 the rationals is 2.
+ *		 the rationals is 2 (its not, duh).
  */
-double Algebraic::Approximate() const
+GiNaC::numeric Algebraic::Approximate() const
 {
     assert(Invariants());
 
-    double value;
-
-    if (polynomial.degree() == 2)
-    {
-    	GiNaC::numeric b(polynomial.getCoeff(1));
-    	GiNaC::numeric c(polynomial.getCoeff(0));
-
-    	GiNaC::numeric rootplus = (-b + sqrt(pow(b,(GiNaC::numeric)2) - 4*c))/2;
-
-    	if (rootinterval.lower() <= rootplus && rootplus <= rootinterval.upper())
-    		value = rootplus.to_double();
-    	else
-    		value = ( (-b - sqrt(pow(b,(GiNaC::numeric)2) - 4*c))/2 ).to_double();
-    }
-    else
-    {
-    	// Assume polynomial.degree() == 1.
-
-    	GiNaC::numeric a(polynomial.getCoeff(1));
-    	GiNaC::numeric b(polynomial.getCoeff(0));
-
-    	value = (-b/a).to_double();
-    }
+    GiNaC::numeric value = GiNaC::fsolve(polynomial.getEx(),
+                                         polynomial.getVariable(),
+                                         rootinterval.lower(),
+                                         rootinterval.upper());
 
     return value;
 }
@@ -199,6 +182,22 @@ void Algebraic::SeparateIntervals(Algebraic & a, Algebraic & b)
         b.tightenInterval();
     }
 }
+
+Algebraic Algebraic::MakeRational(const GiNaC::numeric & a)
+{
+    Algebraic alpha(PolynomialQ::GetVar() - a, IntervalQ(a, a));
+
+    return alpha;
+}
+
+/*{
+    Algebraic alpha(PolynomialQ::GetVar() - a,
+                    IntervalQ(a - Algebraic::delta, a + Algebraic::delta));
+
+    return alpha;
+}*/
+
+const GiNaC::numeric Algebraic::delta = GiNaC::numeric(1, 64);
 
 std::ostream & operator<<(std::ostream & output, const Algebraic & alpha)
 {

@@ -108,9 +108,6 @@ private:
     static std::vector<Algebraic>
         SamplePoints(const std::vector<Algebraic> & roots);
 
-	//! Helper method for SamplePoints.
-	inline static PolynomialQ MakePoly(const GiNaC::numeric & num);
-
 	//! Returns the roots of (f1*...*fn)(alpha, y).
     static std::vector<Algebraic>
         FindRoots2(const Algebraic & alpha, const std::vector<PolynomialQQ> & F);
