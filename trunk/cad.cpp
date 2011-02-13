@@ -23,7 +23,11 @@ std::cout << "Functions: " << std::endl;
     BOOST_FOREACH(const std::string & f, F)
 {        this->F.push_back(PolynomialQQ(f)); // throws on error
 std::cout << this->F.back() << std::endl;}
-    samples = CAD::SamplePoints(PolynomialQ::FindRoots(CAD::Project(this->F)));
+std::vector<Algebraic> temp = PolynomialQ::FindRoots(CAD::Project(this->F));
+std::cout << "temp: " << std::endl;
+BOOST_FOREACH(const Algebraic & alpha, temp)
+std::cout << alpha << std::endl;
+    samples = CAD::SamplePoints(temp);
     std::vector<Algebraic> & alphas = samples;
 std::cout << "Samples: " << std::endl;
 BOOST_FOREACH(const Algebraic & alpha, alphas)
@@ -364,20 +368,21 @@ std::vector<Algebraic>
     // Assume roots.size() >= 1.
 
     GiNaC::numeric s = roots.front().lower() - 1;
-    S.push_back(Algebraic(CAD::MakePoly(s), IntervalQ(s)));
+    //S.push_back(Algebraic(CAD::MakePoly(s), IntervalQ(s)));
+    S.push_back(Algebraic::MakeRational(s));
 
     S.push_back(roots[0]);
 
     for (unsigned int i = 1; i < roots.size(); i++)
     {
     	s = (roots[i-1].upper() + roots[i].lower())/2;
-    	S.push_back(Algebraic(CAD::MakePoly(s), IntervalQ(s)));
+    	S.push_back(Algebraic::MakeRational(s));
 
     	S.push_back(roots[i]);
     }
 
     s = roots.back().upper() + 1;
-    S.push_back(Algebraic(CAD::MakePoly(s), IntervalQ(s)));
+    S.push_back(Algebraic::MakeRational(s));
 
 	return S;
 /*local n,S,s,w,i,lb,ub;
@@ -398,13 +403,6 @@ std::vector<Algebraic>
  return S;	*/
 }
 
-inline PolynomialQ CAD::MakePoly(const GiNaC::numeric & num)
-{
-	PolynomialQ p;
-
-	return PolynomialQ(GiNaC::ex(p.getVariable() - num));
-}
-
 /*!
  * \param F A vector of non-zero polynomials.
  */
@@ -420,29 +418,20 @@ std::vector<Algebraic>
         fs *= f;
 
     assert(!fs.isZero());
-/**/std::cout << "fs: " << fs << std::endl;
+
     // make a conversion operator from PolyQ to PolyQQ for alpha.
     // maybe PolynomialQ::getPolynomialQQ?
     PolynomialQ r(PolynomialQQ::Resultant(PolynomialQQ(alpha.getPolynomial().getEx()),
                                           fs,
                                           1));
-/**/std::cout << "r: " << r << std::endl;
+
     std::vector<Algebraic> P = PolynomialQ::FindRoots(r.getIrreducibleFactors());
     std::vector<Algebraic> R;
     R.reserve(P.size());
-std::cout << "Size of P: " << P.size() << std::endl;
-BOOST_FOREACH(const Algebraic & p, P)
-std::cout << p << std::endl;
-std::cout << "R's: " << std::endl;
-    // Why did I add this step? Can't remember, but removing it breaks the code.
+
     BOOST_FOREACH(const Algebraic & p, P)
-    {
         if (fs.signAt(alpha, p) == 0)
-        {
-            std::cout << p << std::endl;
             R.push_back(p);
-        }
-    }
 
     return R;
 

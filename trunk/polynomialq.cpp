@@ -282,10 +282,6 @@ unsigned int PolynomialQ::sturm(const GiNaC::numeric & a,
  */
 std::vector<PolynomialQ> PolynomialQ::getIrreducibleFactors() const
 {
-    assert(Invariants());
-
-    std::vector<PolynomialQ> factors; // Make a comparison function and change
-    								  // this to use a set.
     // 0
     // 1
     // -1
@@ -298,34 +294,40 @@ std::vector<PolynomialQ> PolynomialQ::getIrreducibleFactors() const
     // 2*x^2 + 1
     // x^2 - 5*x + 6
 
-    GiNaC::ex p = GiNaC::factor(polynomial);
+    assert(Invariants());
 
-    if (!GiNaC::is_a<GiNaC::mul>(p))
+    std::vector<PolynomialQ> factors; // Make a comparison function and change
+    								  // this to use a set.
+
+    GiNaC::ex p = GiNaC::factor(this->polynomial);
+
+    if (GiNaC::is_a<GiNaC::power>(p))
     {
-        factors.push_back(this->getMonic());
+        PolynomialQ temp(p.op(0));
+        factors.push_back(temp);
+    }
+    else if (!GiNaC::is_a<GiNaC::mul>(p)) // what about '(x-1)^3' ?
+    {
+        if (!GiNaC::is_a<GiNaC::numeric>(p))
+            factors.push_back(this->getMonic());
         return factors;
     }
 
     for (GiNaC::const_iterator i = p.begin(); i != p.end(); i++)
     {
-        // The PolyQ constructor will throw if the ex is not a valid poly.
-
         if (GiNaC::is_a<GiNaC::numeric>(*i))
-        {
-        	// do nothing
-        	continue;
-        }
+            continue;
         else if (GiNaC::is_a<GiNaC::power>(*i))
         {
-        	PolynomialQ p((*i).op(0));
+        	PolynomialQ temp((*i).op(0));
 
-        	factors.push_back(p.getMonic());
+        	factors.push_back(temp.getMonic());
         }
         else
         {
-        	PolynomialQ p(*i);
+        	PolynomialQ temp(*i);
 
-        	factors.push_back(p.getMonic());
+        	factors.push_back(temp.getMonic());
         }
 	}
 
@@ -345,7 +347,7 @@ int PolynomialQ::signAt(const Algebraic & a) const
 
     while (true)
     {
-        IntervalQ Y = this->boundRange(alpha.getInterval());
+        IntervalQ Y = remainder.boundRange(alpha.getInterval());
 
         if (Y.upper() < 0) return -1;
         if (Y.lower() > 0) return  1;
@@ -367,9 +369,9 @@ GiNaC::numeric PolynomialQ::eval(const GiNaC::numeric & value) const
 {
     assert(Invariants());
 
-    if (!value.is_rational())
-    	throw std::invalid_argument("PolynomialQ::eval: value passed is not"
-    								"rational.");
+    //if (!value.is_rational())
+    //	throw std::invalid_argument("PolynomialQ::eval: value passed is not"
+    //								"rational.");
 
     GiNaC::ex temp(polynomial.subs(variable == value));
 
@@ -404,17 +406,20 @@ std::vector<Algebraic> PolynomialQ::FindRoots(const std::vector<PolynomialQ> P)
 
     BOOST_FOREACH(const PolynomialQ & f, factors)
     {
+        if (f.degree() <= 0) // just in case
+            continue;
         if (f.degree() == 1)
         {
-        	const GiNaC::numeric root = -f.getCoeff(0);
+            PolynomialQ temp(f.getMonic());
+        	const GiNaC::numeric root = -temp.getCoeff(0);
+        	const GiNaC::numeric delta(1,64);
 
-            Algebraic alpha(f, IntervalQ(root, root));
+            Algebraic alpha(temp, IntervalQ(root-delta, root+delta));
 
             numberSet.insert(alpha);
         }
         else
         {
-            //std::vector<IntervalQ> intervals = PolynomialQ::BoundRealRoots(f);
             std::vector<Algebraic> nums = PolynomialQ::FindRootsOfIrreducible(f);
 
             numberSet.insert(nums.begin(), nums.end());
@@ -439,7 +444,12 @@ std::vector<Algebraic> PolynomialQ::FindRoots(const std::vector<PolynomialQ> P)
 std::vector<Algebraic>
     PolynomialQ::FindRootsOfIrreducible(const PolynomialQ & p)
 {
-    // Assuming degree >= 1.
+    if (p.degree() <= 0)
+    {
+        std::vector<Algebraic> temp;
+        return temp;
+    }
+
     std::vector<PolynomialQ> F = PolynomialQ::sturmseq(p);
 
     GiNaC::numeric R = 0;
@@ -452,7 +462,8 @@ std::vector<Algebraic>
     R += 1;
 
     GiNaC::numeric L = -R, U = R;
-    GiNaC::numeric numroots = PolynomialQ::sturm(F, L, U), roots, L1, U1, NU;
+    GiNaC::numeric numroots = PolynomialQ::sturm(F, L, U);
+    GiNaC::numeric roots, L1, U1, NU;
 
     std::vector<Algebraic> numbers;
 
@@ -499,8 +510,11 @@ std::vector<Algebraic>
         L = U1;
     }
 
-    for (unsigned int i = 0; i < numbers.size()-1; i++)
-        Algebraic::SeparateIntervals(numbers[i], numbers[i+1]);
+    typedef unsigned int uint;
+
+    for (uint i = 0; i < numbers.size()-1; i++)
+        for (uint j = i+1; j < numbers.size(); j++)
+            Algebraic::SeparateIntervals(numbers[i], numbers[j]);
 
     return numbers;
 }

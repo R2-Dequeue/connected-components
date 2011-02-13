@@ -16,6 +16,71 @@
 #include <boost/foreach.hpp>
 #include <boost/tuple/tuple.hpp>
 
+std::ostream & operator<<(std::ostream & output, const GiNaC::numeric & num)
+{
+    output << GiNaC::ex(num);
+
+    return output;
+}
+
+void TestGCD(const PolynomialQ & f, const PolynomialQ & g)
+{
+    using namespace std;
+    using namespace GiNaC;
+
+    ex s,t;
+    ex gcd = PolynomialQQ::gcdex
+        (f.getEx(), g.getEx(), PolynomialQ::GetVar(), s, t);
+    PolynomialQ gg(gcd);
+    cout << "**********************************************************************" << endl;
+    cout << "f: " << f << ". g: " << g << "." << endl;
+    cout << "gcdex: " << gcd << ". s: " << s << ". t: " << t << "." << endl;
+    cout << "f*s + g*t: " << (f.getEx()*s+g.getEx()*t).expand() << endl;
+    cout << "f/gcd: " <<  f/gg << ". f%gcd: " << f%gg << "." << endl;
+    cout << "f/gcd: " <<  g/gg << ". f%gcd: " << g%gg << "." << endl;
+    cout << "**********************************************************************" << endl;
+}
+
+void TestSimple2(const Algebraic & alpha, const Algebraic & beta)
+{
+    using namespace std;
+    using namespace GiNaC;
+
+    boost::tuple<Algebraic, PolynomialQ, PolynomialQ> t =
+        PolynomialQQ::Simple2(alpha, beta);
+
+    Algebraic &     gamma   = t.get<0>();
+    PolynomialQ &   S       = t.get<1>();
+    PolynomialQ &   T       = t.get<2>();
+
+    cout << "Simple2: alpha = " << alpha << ", beta = " << beta << endl;
+    cout << "\tgamma: " << gamma << endl;
+    cout << "\tS: "     << S << endl;
+    cout << "\tT: "     << T << endl;
+
+    numeric a = alpha.Approximate();
+    numeric b = beta.Approximate();
+    numeric g = gamma.Approximate();
+
+    cout << "\t" << ex(S.eval(g)) << " ?= " << ex(a) << endl;
+    cout << "\t" << ex(T.eval(g)) << " ?= " << ex(b) << endl;
+}
+
+void TestANComb(const Algebraic & alpha,
+                const Algebraic & beta,
+                const GiNaC::numeric & t)
+{
+    using namespace std;
+    using namespace GiNaC;
+
+    Algebraic gamma = PolynomialQQ::ANComb(alpha, beta, t);
+
+    cout << "ANComb( " << alpha << " , " << beta << " , " << t << " ) =" << endl;
+    cout << "\t" << gamma << " ~=" << endl;
+    cout << "\t" << gamma.Approximate() << " ?= "
+         << (alpha.Approximate()+t*beta.Approximate()) << endl;
+}
+
 /*
 #define BOOST_TEST_MODULE Connected Components
 #include <boost/test/included/unit_test.hpp>
@@ -114,19 +179,110 @@ int main()
 
     try
     {
-        vector<string> F;
-        //F.push_back("x^2+y^2-4");
-        //F.push_back("x+y");
-        //F.push_back("x-y");
-        //F.push_back("x+y");
-        //F.push_back("x^2+y^2-1");
-        //F.push_back("2*x+3*y^2-2");
-        F.push_back("-x+y^2");
-        F.push_back("x-y-5");
+        {
+            vector<string> F;
+            //F.push_back("x^2+y^2-4");
+            //F.push_back("x+y");
+            //F.push_back("x-y");
+            //F.push_back("x+y");
+            //F.push_back("x^2+y^2-1");
+            //F.push_back("2*x+3*y^2-2");
+            F.push_back("-x+y^2");
+            F.push_back("x-y-5");
 
-        CAD mainCAD(F);
+            CAD mainCAD(F);
 
-        mainCAD.out();
+            mainCAD.out();
+        }
+        /*{
+            PolynomialQQ Fs("(-x+y^2)*(x-y-5)");
+            Algebraic alpha(PolynomialQ("25 - 11*x + x^2"),
+                            IntervalQ(numeric(247,32),numeric(143,16)));
+
+            Algebraic a1(PolynomialQ("x^2+x-5"),
+                         IntervalQ(numeric(-3),numeric(-21,8)));
+            Algebraic a2(PolynomialQ("x^2-x-5"),
+                         IntervalQ(numeric(-15,8),numeric(-3,2)));
+            Algebraic a3(PolynomialQ("x^2+x-5"),
+                         IntervalQ(numeric(3,2),numeric(15,8)));
+            Algebraic a4(PolynomialQ("x^2-x-5"),
+                         IntervalQ(numeric(21,8),numeric(3)));
+
+            cout << Fs.signAt(alpha, a1) << endl;
+            cout << Fs.signAt(alpha, a2) << endl;
+            cout << Fs.signAt(alpha, a3) << endl;
+            cout << Fs.signAt(alpha, a4) << endl;
+
+            cout << "************************************" << endl;
+        }*/
+        /*{
+            // [[[1,2],x^2-2], [[-2,-1],x^2-2]]
+            Algebraic alpha(PolynomialQ("x^2-2"), IntervalQ(1,2));
+            Algebraic beta(PolynomialQ("x^2-2"), IntervalQ(-2,-1));
+            boost::tuple<Algebraic, PolynomialQ, PolynomialQ> t =
+                PolynomialQQ::Simple(alpha, beta);
+
+            cout << "Simple:" << endl;
+            cout << "gamma: " << t.get<0>() << endl;
+            cout << "S: " << t.get<1>() << endl;
+            cout << "T: " << t.get<2>() << endl;
+
+            alpha = Algebraic(PolynomialQ("x^2-2"), IntervalQ(1,2));
+            beta = Algebraic(PolynomialQ("x^2-3"), IntervalQ(1,2));
+
+            TestSimple2(alpha, beta);
+
+            alpha = Algebraic(PolynomialQ("x^2-3"), IntervalQ(1,2));
+            beta = Algebraic(PolynomialQ("x^2-5"), IntervalQ(2,3));
+
+            TestSimple2(alpha, beta);
+
+            alpha = Algebraic(PolynomialQ("x^2-2"), IntervalQ(1,2));
+            beta = Algebraic(PolynomialQ("x^2-2"), IntervalQ(-2,-1));
+
+            TestSimple2(alpha, beta);
+
+            // ------------------------------------------------------------
+
+            alpha = Algebraic(PolynomialQ("x^2-2"), IntervalQ(1,2));
+            beta = Algebraic(PolynomialQ("x^2-3"), IntervalQ(1,2));
+            TestANComb(alpha, beta, 1);
+            TestANComb(alpha, beta, 2);
+
+            alpha = Algebraic(PolynomialQ("x^2-3"), IntervalQ(1,2));
+            beta  = Algebraic(PolynomialQ("x^2-5"), IntervalQ(2,3));
+            TestANComb(alpha, beta, 1);
+            TestANComb(alpha, beta, 2);
+
+            cout << "sres *************************************" << endl;
+            PolynomialQ f("(x-1)*(x-2)*(x-3)*(x-4)*(x-5)");
+            PolynomialQ g("(x+1)*(x+2)*(x+3)*(x+4)");
+            for (int k = 0; k <= 4; k++)
+                cout << "Sres" << k << ": " << PolynomialQQ::sres
+                    (f.getEx(), g.getEx(), k, PolynomialQ::GetVar()) << endl;
+            g = PolynomialQ("(x-1)*(x+2)*(x+3)*(x+4)");
+            for (int k = 0; k <= 4; k++)
+                cout << "Sres" << k << ": " << PolynomialQQ::sres
+                    (f.getEx(), g.getEx(), k, PolynomialQ::GetVar()) << endl;
+            g = PolynomialQ("(x-1)*(x-2)*(x+3)*(x+4)");
+            for (int k = 0; k <= 4; k++)
+                cout << "Sres" << k << ": " << PolynomialQQ::sres
+                    (f.getEx(), g.getEx(), k, PolynomialQ::GetVar()) << endl;
+            g = PolynomialQ("(x-1)*(x-2)*(x-3)*(x+4)");
+            for (int k = 0; k <= 4; k++)
+                cout << "Sres" << k << ": " << PolynomialQQ::sres
+                    (f.getEx(), g.getEx(), k, PolynomialQ::GetVar()) << endl;
+        }*/
+        /*{
+            cout << "gcdex ************************************" << endl;
+            ex s,t,gcd;
+            PolynomialQ f = PolynomialQ("x^3-1");
+            PolynomialQ g = PolynomialQ("x^2-1");
+            TestGCD(f,g);
+            f = PolynomialQ("x^3+1");
+            g = PolynomialQ("x^2 + 2*x + 1");
+            TestGCD(f,g);
+        }*/
 /*
         Algebraic alpha(PolynomialQ("x^2-2"), IntervalQ(1, 2));
         Algebraic beta(PolynomialQ("x^2-3"), IntervalQ(1, 2));
