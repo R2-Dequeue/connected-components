@@ -5,14 +5,14 @@
 
 #include "polynomialqq.hpp"
 
-#include "polynomialbase.hpp"
-#include "algebraic.hpp"
-
 #include <stdexcept>
 #include <numeric>
 #include <functional>
 
 #include <boost/foreach.hpp>
+
+#include "polynomialbase.hpp"
+#include "algebraic.hpp"
 
 //#include <boost/numeric/ublas/matrix.hpp>
 
@@ -220,7 +220,7 @@ std::vector<PolynomialQQ> PolynomialQQ::getIrreducibleFactors() const
         PolynomialQQ temp(p.op(0));
         factors.push_back(temp);
     }
-    else if (!GiNaC::is_a<GiNaC::mul>(p)) // what about '(x-1)^3' ?
+    else if (!GiNaC::is_a<GiNaC::mul>(p))
     {
         if (!GiNaC::is_a<GiNaC::numeric>(p))
             factors.push_back(PolynomialQQ(p)); // (this->getMonic());
@@ -254,14 +254,14 @@ int PolynomialQQ::signAt(const Algebraic & alpha, const Algebraic & beta) const
 
     boost::tuple<Algebraic, PolynomialQ, PolynomialQ> t =
         PolynomialQQ::Simple(alpha, beta);
+
     Algebraic & gamma   = t.get<0>();
     PolynomialQ & S     = t.get<1>();
     PolynomialQ & T     = t.get<2>();
-std::cout << gamma << "    ";
-std::cout << "( " << S << ", " << T << " )" << std::endl;
+
     PolynomialQ h(polynomial.subs(GiNaC::lst(var1 == S.getEx(),
                                              var2 == T.getEx())).expand());
-std::cout << h << std::endl;
+
     return h.signAt(gamma);
 
 /*
@@ -376,9 +376,6 @@ bool PolynomialQQ::Invariants() const
     if (!polynomial.info(info_flags::rational_polynomial))
         return false;
 
-    //if (polynomial == ex()) // should always be at least 'ex(0)'.
-    //    return false;
-
     int deg1 = polynomial.degree(var1);
 
     for (int i = 0; i <= deg1; i++)
@@ -433,23 +430,17 @@ Algebraic PolynomialQQ::ANComb(Algebraic alpha,
                                Algebraic beta,
                                const GiNaC::numeric & t)
 {
-/**///std::cout << "**** ANComb **** A *******************" << std::endl;
-/**///std::cout << "Alpha: " << alpha << std::endl;
-/**///std::cout << "Beta: " << beta << std::endl;
-/**///std::cout << "t: " << GiNaC::ex(t) << std::endl;
     GiNaC::ex polya = alpha.getEx();
     GiNaC::symbol tmp, var(alpha.getPolynomial().getVariable());;
 
     GiNaC::ex res = resultant(polya.subs(var == tmp - var*t).expand(),
                               beta.getEx(), var);
-/**///std::cout << "res: " << res << std::endl;
+
     PolynomialQ r(res.subs(tmp == var)); // throws on error
-/**///std::cout << "r: " << r << std::endl;
+
     std::vector<Algebraic> gammas =
     	PolynomialQ::FindRoots(r.getIrreducibleFactors());
-/**///std::cout << "Size of gammas: " << gammas.size() << std::endl;
-/**///BOOST_FOREACH(const Algebraic & gamma, gammas)
-/**///    std::cout << "    " << gamma << std::endl;
+
     while (true)
     {
         IntervalQ IJ(alpha.lower() + t*beta.lower(),
@@ -460,10 +451,7 @@ Algebraic PolynomialQQ::ANComb(Algebraic alpha,
             IntervalQ K = gamma.getInterval();
 
             if (K.lower() <= IJ.lower() && IJ.upper() <= K.upper())
-            {
-/**///std::cout << "**** ANComb **** B *******************" << std::endl;
                 return gamma;
-            }
         }
 
         alpha.tightenInterval();

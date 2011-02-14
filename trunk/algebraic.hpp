@@ -10,15 +10,14 @@
 
 #include "polynomialq.hpp"
 
-//! This type represents the interval in class Algebraic.
-//typedef boost::numeric::interval<GiNaC::numeric> IntervalQ;
-
 /*!
  * \brief A class representing an algebraic number.
  *
- * \detail Internally, the number is represented by a polynomial and an interval
- *         on which the polynomial has one and only one root, which is the
- *         number.
+ * \detail Internally, the number is represented by a polynomial and a closed
+ *         interval on which the polynomial has one and only one root, which is
+ *         the number. Note that the interval can be be a single point
+ *         (i.e. [a, a]). Internally, the polynomial is represented by a
+ *         GiNaC::ex object which has copy-on-write semantics.
  */
 class Algebraic
 {
@@ -37,8 +36,7 @@ public:
 
     //! The default constructor.
     Algebraic()
-        : polynomial(GiNaC::ex(PolynomialQ::GetVar())), rootinterval(-1, 1) {};
-
+        : polynomial(GiNaC::ex(PolynomialQ::GetVar())), rootinterval(-delta, delta) {}
     //! Basic constructor to assemble an algebraic number.
     Algebraic(const PolynomialQ & p, const IntervalQ & i);
 
@@ -59,7 +57,10 @@ public:
     //! Shrinks the internal intervals of a & b so that they don't intersect.
     static void SeparateIntervals(Algebraic & a, Algebraic & b);
 
+    //! Returns an object with a degree 1 polynomial and interval [a, a].
     static Algebraic MakeRational(const GiNaC::numeric & a);
+    //! Returns an object with a degree 1 polynomial and interval [a-delta, a+delta].
+    static Algebraic MakeWideRational(const GiNaC::numeric & a);
 
     static const GiNaC::numeric delta;
 
@@ -78,6 +79,12 @@ public:
 
 inline bool operator<(const Algebraic & alpha, const Algebraic & beta)
     { return (alpha.compare(beta) == -1); }
+inline bool operator<=(const Algebraic & alpha, const Algebraic & beta)
+    { return (alpha.compare(beta) <= 0); }
+inline bool operator>(const Algebraic & alpha, const Algebraic & beta)
+    { return (alpha.compare(beta) == 1); }
+inline bool operator>=(const Algebraic & alpha, const Algebraic & beta)
+    { return (alpha.compare(beta) >= 0); }
 
 //Algebraic operator+(const Algebraic & lhs, const Algebraic & rhs);
 //Algebraic operator-(const Algebraic & lhs, const Algebraic & rhs);

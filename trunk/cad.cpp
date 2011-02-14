@@ -19,19 +19,13 @@ CAD::CAD(const std::vector<std::string> & F)
 {
     // can constructor be called on already instantiated object?
     // Be careful with 'F' and 'this->F'.
-std::cout << "Functions: " << std::endl;
+
     BOOST_FOREACH(const std::string & f, F)
-{        this->F.push_back(PolynomialQQ(f)); // throws on error
-std::cout << this->F.back() << std::endl;}
-std::vector<Algebraic> temp = PolynomialQ::FindRoots(CAD::Project(this->F));
-std::cout << "temp: " << std::endl;
-BOOST_FOREACH(const Algebraic & alpha, temp)
-std::cout << alpha << std::endl;
-    samples = CAD::SamplePoints(temp);
+        this->F.push_back(PolynomialQQ(f)); // throws on error
+
+    samples = CAD::SamplePoints(PolynomialQ::FindRoots(CAD::Project(this->F)));
     std::vector<Algebraic> & alphas = samples;
-std::cout << "Samples: " << std::endl;
-BOOST_FOREACH(const Algebraic & alpha, alphas)
-std::cout << alpha << std::endl;
+
     stacks.reserve(alphas.size());
 
     BOOST_FOREACH(const Algebraic & alpha, alphas)
@@ -43,18 +37,17 @@ std::cout << alpha << std::endl;
         std::vector<Sample> & T = stacks.back();
 
         T.reserve(betas.size());
-std::cout << "Betas: " << std::endl;
+
         BOOST_FOREACH(const Algebraic & beta, betas)
         {
             std::vector<char> signs(this->F.size()); // allocates 'size' of
             										 // these up front.
-std::cout << beta << ": ";
+
             for (std::vector<char>::size_type i = 0;
                  i < this->F.size();
                  i++)
-{                signs[i] = this->F[i].signAt(alpha, beta);
-std::cout << int(signs[i]) << " ";}
-std::cout << std::endl;
+                signs[i] = this->F[i].signAt(alpha, beta);
+
             T.push_back(Sample(beta, signs));
         }
     }

@@ -6,21 +6,22 @@
 #ifndef __CAD__
 #define __CAD__
 
-#include <ginac/ginac.h>
-
 #include <vector>
 #include <utility>
 #include <string>
+
+#include <boost/numeric/ublas/symmetric.hpp>
+
+#include <ginac/ginac.h>
 
 #include "polynomialq.hpp"
 #include "polynomialqq.hpp"
 #include "algebraic.hpp"
 
-#include <boost/numeric/ublas/symmetric.hpp>
-
 //! The type used for the connectivity matrix.
 typedef boost::numeric::ublas::symmetric_matrix<unsigned char> uBitMatrix;
-typedef std::pair<Algebraic, Algebraic> Point; //!< Represents a point in the plane.
+//! Represents a point in the plane.
+typedef std::pair<Algebraic, Algebraic> Point;
 /*!
  * \brief Stores pairs of indices into the CAD.
  * \detail Indices start at 0, not at 1.
@@ -30,7 +31,10 @@ typedef std::pair<unsigned int, unsigned int> CellIndex;
 /*!
  * \brief The cyclical algebraic decomposition of a set of polynomials.
  *
- * \detail
+ * \detail This object presents an interface for determining the partitions
+ *         of the plane made by two polynomials. For example [x+y, x-y]
+ *         creates four partitions, and [x^2+y^2-1, x^2+y^2-4] creates three
+ *         partitions.
  * \todo Maybe change to lists for internal private functions for fast
  *		 modifications.
  * \todo Maybe template methods so they can take/return various containers?
