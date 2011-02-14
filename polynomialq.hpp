@@ -10,15 +10,18 @@
 #include <string>
 #include <vector>
 
+#include <boost/numeric/interval.hpp>
+
 #include <ginac/ginac.h>
 
-#include <boost/numeric/interval.hpp>
+//! This type represents the interval in class Algebraic.
 typedef boost::numeric::interval<GiNaC::numeric> IntervalQ;
 
 class Algebraic; // To allow a circular dependancy.
 
 /*!
- * \brief A class representing univariate polynomials over the rationals.
+ * \brief A class representing univariate polynomials over the
+ *        (infinite-precision) rationals.
  *
  * \detail The rationals are represented by bignum rationals and the polynomials
  *         are only limited by memory.
@@ -43,20 +46,18 @@ public:
     int degree() const; //!< The degree of the polynomial.
     bool isMonic() const; //!< True iff the leading coefficient is 1.
 	bool isZero() const; //!< True iff the polynomial is '0'.
-	bool isIrreducible() const;
-	bool isConstant() const;
+	bool isIrreducible() const; //!< True iff the polynomial is irreducible over the rationals.
+	bool isConstant() const; //!< True iff this is a constant polynomial.
+
+	static GiNaC::symbol GetVar() { return variable; }
 
 	GiNaC::symbol getVariable() const   { return variable; }
-	static GiNaC::symbol GetVar() { return variable; }
-	GiNaC::ex getEx() const
-        { assert(Invariants()); return polynomial; }
-
+	GiNaC::ex getEx() const { assert(Invariants()); return polynomial; }
     GiNaC::numeric getCoeff(const unsigned int i) const;
-
     PolynomialQ getMonic() const;
-	PolynomialQ & makeMonic();
-
     PolynomialQ getDerivative() const;
+
+	PolynomialQ & makeMonic();
     PolynomialQ & differentiate();
 
     //! Returns the number of roots of f between a and b.
@@ -67,15 +68,13 @@ public:
 
 	//! Returns the sign of f(a).
     int signAt(const Algebraic & a) const;
+    //! Returns the value of the polynomial at 'value'.
 	GiNaC::numeric eval(const GiNaC::numeric & value) const;
-	//!< Returns the value of the polynomial at 'value'.
 
 	static std::vector<PolynomialQ>
         IrreducibleFactors(const std::vector<PolynomialQ> & F);
-
     static GiNaC::numeric
         Resultant(const PolynomialQ & f, const PolynomialQ & g);
-
     static std::vector<Algebraic> FindRoots(const std::vector<PolynomialQ> P);
 
 	PolynomialQ & operator+=(const PolynomialQ & rhs);

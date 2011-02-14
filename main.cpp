@@ -8,13 +8,14 @@
 #include <string>
 #include <vector>
 
+#include <boost/foreach.hpp>
+#include <boost/tuple/tuple.hpp>
+
 #include <ginac/ginac.h>
 
 #include "cad.hpp"
+#include "polynomialq.hpp"
 #include "polynomialqq.hpp"
-
-#include <boost/foreach.hpp>
-#include <boost/tuple/tuple.hpp>
 
 std::ostream & operator<<(std::ostream & output, const GiNaC::numeric & num)
 {
@@ -215,7 +216,7 @@ int main()
 
             cout << "************************************" << endl;
         }*/
-        /*{
+        {
             // [[[1,2],x^2-2], [[-2,-1],x^2-2]]
             Algebraic alpha(PolynomialQ("x^2-2"), IntervalQ(1,2));
             Algebraic beta(PolynomialQ("x^2-2"), IntervalQ(-2,-1));
@@ -272,7 +273,7 @@ int main()
             for (int k = 0; k <= 4; k++)
                 cout << "Sres" << k << ": " << PolynomialQQ::sres
                     (f.getEx(), g.getEx(), k, PolynomialQ::GetVar()) << endl;
-        }*/
+        }
         /*{
             cout << "gcdex ************************************" << endl;
             ex s,t,gcd;

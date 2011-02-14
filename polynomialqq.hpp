@@ -6,15 +6,15 @@
 #ifndef __POLYNOMIALQQ__
 #define __POLYNOMIALQQ__
 
-#include <ginac/ginac.h>
-
-#include "polynomialq.hpp"
-
 #include <string>
 #include <cassert>
 #include <vector>
 
 #include <boost/tuple/tuple.hpp>
+
+#include <ginac/ginac.h>
+
+#include "polynomialq.hpp"
 
 /*!
  * \todo Add support for different orderings (lots of functions to add...).
@@ -41,29 +41,27 @@ public:
 	bool isIrreducible() const;
     bool isConstant() const;
 
+    inline GiNaC::ex getEx() const;
     PolynomialQQ getDerivative(unsigned int variable) const;
-    PolynomialQQ & differentiate(unsigned int variable);
 
     PolynomialQ subx(const GiNaC::numeric & a) const;
     PolynomialQ suby(const GiNaC::numeric & b) const;
 
     std::vector<PolynomialQQ> getIrreducibleFactors() const;
 
-    int signAt(const Algebraic & alpha, const Algebraic & beta) const;
+    PolynomialQQ & differentiate(unsigned int variable);
 
-    inline GiNaC::ex getEx() const;
+    int signAt(const Algebraic & alpha, const Algebraic & beta) const;
 
     static std::vector<PolynomialQQ>
         IrreducibleFactors(const std::vector<PolynomialQQ> & F);
-
     static PolynomialQ Resultant(const PolynomialQQ & f,
                                  const PolynomialQQ & g,
                                  unsigned int var);
-
-    //static PolynomialQ Subresultant(const PolynomialQQ & f,
-    //                                const PolynomialQQ & g,
-    //                                const unsigned int k,
-    //                                const unsigned int var);
+    //static PolynomialQQ Subresultant(const PolynomialQQ & f,
+    //                                 const PolynomialQQ & g,
+    //                                 const unsigned int k,
+    //                                 const unsigned int var);
 
 	PolynomialQQ & operator+=(const PolynomialQQ & rhs);
     PolynomialQQ & operator-=(const PolynomialQQ & rhs);

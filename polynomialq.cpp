@@ -11,10 +11,9 @@
 #include <functional>
 #include <stdexcept>
 
-#include "polynomialbase.hpp"
-
 #include <boost/foreach.hpp>
 
+#include "polynomialbase.hpp"
 #include "algebraic.hpp"
 
 // Field to use
@@ -410,11 +409,9 @@ std::vector<Algebraic> PolynomialQ::FindRoots(const std::vector<PolynomialQ> P)
             continue;
         if (f.degree() == 1)
         {
-            PolynomialQ temp(f.getMonic());
-        	const GiNaC::numeric root = -temp.getCoeff(0);
-        	const GiNaC::numeric delta(1,64);
+        	const GiNaC::numeric root = -f.getMonic().getCoeff(0);
 
-            Algebraic alpha(temp, IntervalQ(root-delta, root+delta));
+            Algebraic alpha(Algebraic::MakeWideRational(root));
 
             numberSet.insert(alpha);
         }

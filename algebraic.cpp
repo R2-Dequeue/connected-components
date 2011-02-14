@@ -7,6 +7,8 @@
 
 #include <cassert>
 
+const GiNaC::numeric Algebraic::delta = GiNaC::numeric(1, 64);
+
 Algebraic::Algebraic(const PolynomialQ & p, const IntervalQ & i)
     : polynomial(p), rootinterval(i)
 {
@@ -190,14 +192,15 @@ Algebraic Algebraic::MakeRational(const GiNaC::numeric & a)
     return alpha;
 }
 
-/*{
+Algebraic Algebraic::MakeWideRational(const GiNaC::numeric & a)
+{
+    const GiNaC::numeric delta(1,64);
+
     Algebraic alpha(PolynomialQ::GetVar() - a,
-                    IntervalQ(a - Algebraic::delta, a + Algebraic::delta));
+                    IntervalQ(a-Algebraic::delta, a+Algebraic::delta));
 
     return alpha;
-}*/
-
-const GiNaC::numeric Algebraic::delta = GiNaC::numeric(1, 64);
+}
 
 std::ostream & operator<<(std::ostream & output, const Algebraic & alpha)
 {
