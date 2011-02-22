@@ -7,27 +7,7 @@
 
 #include <cassert>
 
-const GiNaC::numeric Algebraic::delta = GiNaC::numeric(1, 64);
-
-Algebraic::Algebraic(const PolynomialQ & p, const IntervalQ & i)
-    : polynomial(p), rootinterval(i)
-{
-    assert(Invariants());
-}
-
-inline GiNaC::numeric Algebraic::lower() const
-{
-    assert(Invariants());
-
-    return rootinterval.lower();
-}
-
-inline GiNaC::numeric Algebraic::upper() const
-{
-    assert(Invariants());
-
-    return rootinterval.upper();
-}
+//const GiNaC::numeric Algebraic::delta = GiNaC::numeric(1, 64);
 
 /*!
  * \param B Any Algebraic number, including *this.
@@ -87,7 +67,6 @@ Algebraic & Algebraic::tightenInterval()
     const GiNaC::numeric sample = polynomial.eval(m);
 
     if (sample == 0)
-        //rootinterval.assign((3*l + u)/4, (l + 3*u)/4);
         rootinterval.assign((l+m)/2, (u+m)/2);
     else
     {
@@ -98,39 +77,8 @@ Algebraic & Algebraic::tightenInterval()
         else
             rootinterval.assign(l, m);
     }
-/*local v,l,u,m,p,pm,rr;
- v := Var(r[2]);
- l := r[1][1];
- u := r[1][2];
- p := r[2];
- m := (u+l)/2;
- pm := eval(p,v=m);
- if pm = 0 then
-    rr := [[(l+m)/2,(u+m)/2],p];
- elif pm * eval(p,v=u) <= 0 then
-   rr := [[m,u],p];
- else
-   rr := [[l,m],p];
- fi;
- return rr; */
 
     return *this;
-}
-
-/*!
- * \todo Double check that the max degree of an irreducible polynomial over
- *		 the rationals is 2 (its not, duh).
- */
-GiNaC::numeric Algebraic::Approximate() const
-{
-    assert(Invariants());
-
-    GiNaC::numeric value = GiNaC::fsolve(polynomial.getEx(),
-                                         polynomial.getVariable(),
-                                         rootinterval.lower(),
-                                         rootinterval.upper());
-
-    return value;
 }
 
 /*!
@@ -167,45 +115,4 @@ bool Algebraic::Invariants() const
     	return false;
 
     return true;
-}
-
-/*!
- * \detail Modifies the parameters by resizing the intervals until they do not
- *         intersect.
- */
-void Algebraic::SeparateIntervals(Algebraic & a, Algebraic & b)
-{
-    assert(a.Invariants());
-    assert(b.Invariants());
-
-    while ( !(a.upper() < b.lower() || b.upper() < a.lower()) )
-    {
-        a.tightenInterval();
-        b.tightenInterval();
-    }
-}
-
-Algebraic Algebraic::MakeRational(const GiNaC::numeric & a)
-{
-    Algebraic alpha(PolynomialQ::GetVar() - a, IntervalQ(a, a));
-
-    return alpha;
-}
-
-Algebraic Algebraic::MakeWideRational(const GiNaC::numeric & a)
-{
-    const GiNaC::numeric delta(1,64);
-
-    Algebraic alpha(PolynomialQ::GetVar() - a,
-                    IntervalQ(a-Algebraic::delta, a+Algebraic::delta));
-
-    return alpha;
-}
-
-std::ostream & operator<<(std::ostream & output, const Algebraic & alpha)
-{
-    output << "( [" << GiNaC::ex(alpha.rootinterval.lower()) << ", " << GiNaC::ex(alpha.rootinterval.upper())
-    	   << "], " << alpha.polynomial.getEx() << " )";
-
-    return output;
 }

@@ -438,20 +438,20 @@ Algebraic PolynomialQQ::ANComb(Algebraic alpha,
 
     PolynomialQ r(res.subs(tmp == var)); // throws on error
 
-    std::vector<Algebraic> gammas =
-    	PolynomialQ::FindRoots(r.getIrreducibleFactors());
+    //std::vector<Algebraic> gammas =
+    //	PolynomialQ::FindRoots(*(r.getIrreducibleFactors()));
+    std::auto_ptr<Algebraic::vector> gammas =
+        r.getRoots<Algebraic::vector>();
 
     while (true)
     {
         IntervalQ IJ(alpha.lower() + t*beta.lower(),
                      alpha.upper() + t*beta.upper());
 
-        BOOST_FOREACH(const Algebraic & gamma, gammas)
+        BOOST_FOREACH(const Algebraic & K, *gammas)
         {
-            IntervalQ K = gamma.getInterval();
-
             if (K.lower() <= IJ.lower() && IJ.upper() <= K.upper())
-                return gamma;
+                return K;
         }
 
         alpha.tightenInterval();
@@ -555,7 +555,7 @@ boost::tuple<Algebraic, PolynomialQ, PolynomialQ>
     }
 
     GiNaC::ex T = GiNaC::rem((-s1.coeff(v, 0)) * c2 / g, C, _z);
-    GiNaC::ex S = _z - T*t;
+    GiNaC::ex S = _z - T*GiNaC::ex(t);
 
     S = S.subs(_z == w);
     T = T.subs(_z == w);
@@ -692,8 +692,7 @@ inline PolynomialQQ PolynomialQQ::ParseString(const std::string & s) const
     table[var1.get_name()] = var1;
     table[var2.get_name()] = var2;
 
-    GiNaC::parser reader(table); // reader(table, true);
-    reader.strict = true;
+    GiNaC::parser reader(table, true);
 
     PolynomialQQ p(reader(s).expand()); // throws an exception if parsing fails.
 

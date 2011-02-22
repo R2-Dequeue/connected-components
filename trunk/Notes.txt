@@ -74,12 +74,33 @@ PolynomialQQQQ
 IntervalQ
 
 Algebraic <- PolynomialQ, IntervalQ
--------------------------
+-------------------------------------------------------------------------------
 GiNaC::parser throws a parse_error exception (subclass of invalid_argument).
--------------------------
+-------------------------------------------------------------------------------
 A public Invariants() method for all classes.
     1) Helps for asserts.
     2) Helps to check parsed data is correct.
+-------------------------------------------------------------------------------
+// at, in, to, over, on, within, inside, into, with, amid, among, amongst,
+// inside, into
+//
+// get, return
+//
+// store, put, save, add, set
+//
+// this->StoreIrreducibleFactorsIn(std::vector<Algebraic> & factors);
+// this->PutIrreducibleFactorsIn(std::vector<Algebraic> & factors);
+// this->SaveIrreducibleFactorsIn(std::vector<Algebraic> & factors);
+// this->AddIrreducibleFactorsTo(std::vector<Algebraic> & factors);
+//
+//
+// this->StoreIrreducibleFactorsAt(std::vector<Algebraic> & factors);
+// this->StoreIrreducibleFactorsIn(std::vector<Algebraic> & factors);
+// this->PutIrreducibleFactorsAt(std::vector<Algebraic> & factors);
+// this->PutIrreducibleFactorsIn(std::vector<Algebraic> & factors);
+// this->SaveIrreducibleFactorsAt(std::vector<Algebraic> & factors);
+// this->SaveIrreducibleFactorsIn(std::vector<Algebraic> & factors);
+-------------------------------------------------------------------------------
 
 
 
