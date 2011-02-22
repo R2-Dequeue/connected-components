@@ -6,6 +6,10 @@
 #ifndef __ALGEBRAIC__
 #define __ALGEBRAIC__
 
+#include <vector>
+#include <set>
+#include <list>
+
 #include <ginac/ginac.h>
 
 #include "polynomialq.hpp"
@@ -34,9 +38,12 @@ private:
 
 public:
 
+    typedef typename std::vector<Algebraic> vector;
+    typedef typename std::set<Algebraic>    set;
+    typedef typename std::list<Algebraic>   list;
+
     //! The default constructor.
-    Algebraic()
-        : polynomial(GiNaC::ex(PolynomialQ::GetVar())), rootinterval(-delta, delta) {}
+    Algebraic();
     //! Basic constructor to assemble an algebraic number.
     Algebraic(const PolynomialQ & p, const IntervalQ & i);
 
@@ -46,23 +53,37 @@ public:
     GiNaC::numeric lower() const; //!< Returns the lower bound of the interval.
     GiNaC::numeric upper() const; //!< Returns the upper bound of the interval.
 
-    inline IntervalQ getInterval() const { return IntervalQ(rootinterval); }
-    inline GiNaC::ex getEx() const { return polynomial.getEx(); }
-    inline PolynomialQ getPolynomial() const { return polynomial; }
+    bool isZero() const;
+    bool isNonZero() const;
+    bool isPositive() const;
+    bool isNegative() const;
+    bool isNonNegative() const;
+    bool isNonPositive() const;
+    bool isRational() const;
+    bool isInteger() const;
+    bool isNatural() const;     //!< true iff alpha is in {1,2,3,4,...}.
 
+    IntervalQ getInterval() const;
+    GiNaC::ex getEx() const;
+    PolynomialQ getPolynomial() const;
+    Algebraic getAbs() const; //!< Return the absolute value of alpha.
+
+    int sgn() const;
     int compare(const Algebraic & B) const; //!< Compare this number with another.
     Algebraic & tightenInterval(); //!< Shrinks the interval to a proper subset.
+    Algebraic & takeAbs();
+    Algebraic & mul(const GiNaC::numeric & a);
     GiNaC::numeric Approximate() const; //!< A floating point approximation of this number.
+    GiNaC::numeric approx(unsigned int d) const;
 
     //! Shrinks the internal intervals of a & b so that they don't intersect.
     static void SeparateIntervals(Algebraic & a, Algebraic & b);
-
     //! Returns an object with a degree 1 polynomial and interval [a, a].
     static Algebraic MakeRational(const GiNaC::numeric & a);
     //! Returns an object with a degree 1 polynomial and interval [a-delta, a+delta].
     static Algebraic MakeWideRational(const GiNaC::numeric & a);
-
-    static const GiNaC::numeric delta;
+    //! Sets the radius for MakeWideRational.
+    //static const GiNaC::numeric delta;
 
     /*!
      * \brief Helper method for internal 'assert' checks.
@@ -70,26 +91,314 @@ public:
      */
 	bool Invariants() const;
 
-	inline bool operator==(const Algebraic & b) { return (compare(b) == 0); }
-    inline bool operator!=(const Algebraic & b) { return (compare(b) != 0); }
-
 	friend class PolynomialQ;
-	friend std::ostream & operator<<(std::ostream & output, const Algebraic & alpha);
 };
 
-inline bool operator<(const Algebraic & alpha, const Algebraic & beta)
-    { return (alpha.compare(beta) == -1); }
-inline bool operator<=(const Algebraic & alpha, const Algebraic & beta)
-    { return (alpha.compare(beta) <= 0); }
-inline bool operator>(const Algebraic & alpha, const Algebraic & beta)
-    { return (alpha.compare(beta) == 1); }
-inline bool operator>=(const Algebraic & alpha, const Algebraic & beta)
-    { return (alpha.compare(beta) >= 0); }
+#define __DELTA ( GiNaC::numeric(1, 64) )
 
-//Algebraic operator+(const Algebraic & lhs, const Algebraic & rhs);
-//Algebraic operator-(const Algebraic & lhs, const Algebraic & rhs);
-//Algebraic operator*(const Algebraic & lhs, const Algebraic & rhs);
-//Algebraic operator/(const Algebraic & lhs, const Algebraic & rhs);
-//Algebraic operator%(const Algebraic & lhs, const Algebraic & rhs);
+inline Algebraic::Algebraic()
+    : polynomial(GiNaC::ex(PolynomialQ::GetVar())),
+      rootinterval(-__DELTA, __DELTA)
+{
+    assert(Invariants());
+}
+
+inline Algebraic::Algebraic(const PolynomialQ & p, const IntervalQ & i)
+    : polynomial(p), rootinterval(i)
+{
+    assert(Invariants());
+}
+
+inline GiNaC::numeric Algebraic::lower() const
+{
+    assert(Invariants());
+
+    return rootinterval.lower();
+}
+
+inline GiNaC::numeric Algebraic::upper() const
+{
+    assert(Invariants());
+
+    return rootinterval.upper();
+}
+
+inline bool Algebraic::isZero() const
+{
+    assert(Invariants());
+
+    return (polynomial == PolynomialQ(GiNaC::ex(PolynomialQ::GetVar())));
+}
+
+inline bool Algebraic::isNonZero() const
+{
+    return (!this->isZero());
+}
+
+inline bool Algebraic::isPositive() const
+{
+    return (this->sgn() == 1);
+}
+
+inline bool Algebraic::isNegative() const
+{
+    return (this->sgn() == -1);
+}
+
+inline bool Algebraic::isNonNegative() const
+{
+    return (this->sgn() >= 0);
+}
+
+inline bool Algebraic::isNonPositive() const
+{
+    return (this->sgn() <= 0);
+}
+
+inline bool Algebraic::isRational() const
+{
+    assert(Invariants());
+
+    return (polynomial.degree() == 1);
+}
+
+inline bool Algebraic::isInteger() const
+{
+    assert(Invariants());
+
+    return (polynomial.degree() == 1 &&
+            polynomial.getCoeff(0).is_integer());
+}
+
+inline bool Algebraic::isNatural() const
+{
+    assert(Invariants());
+
+    return (polynomial.degree() == 1 &&
+            polynomial.getCoeff(0).is_integer() &&
+            polynomial.getCoeff(0).is_negative());// x+a=0 => x=-a
+}
+
+inline IntervalQ Algebraic::getInterval() const
+{
+    assert(Invariants());
+
+    return IntervalQ(rootinterval);
+}
+
+inline GiNaC::ex Algebraic::getEx() const
+{
+    assert(Invariants());
+
+    return polynomial.getEx();
+}
+
+inline PolynomialQ Algebraic::getPolynomial() const
+{
+    assert(Invariants());
+
+    return polynomial;
+}
+
+inline Algebraic Algebraic::getAbs() const
+{
+    assert(Invariants());
+
+    Algebraic alpha(*this);
+
+    while (alpha.lower().csgn() != alpha.upper().csgn())
+        alpha.tightenInterval();
+
+    if (alpha.lower().csgn() >= 0)
+        return *this;
+
+    alpha.polynomial.negate();
+    const GiNaC::numeric a = this->lower(), b = this->upper();
+    alpha.rootinterval.assign(-b, -a);
+
+    assert(alpha.Invariants());
+
+    return alpha;
+}
+
+inline int Algebraic::sgn() const
+{
+    assert(Invariants());
+
+    if (this->isZero())
+        return 0;
+
+    Algebraic alpha(*this);
+
+    while (alpha.lower().csgn() != alpha.upper().csgn())
+        alpha.tightenInterval();
+
+    return alpha.lower().csgn();
+}
+
+inline Algebraic & Algebraic::takeAbs()
+{
+    if (this->isZero())
+        return *this;
+
+    while (this->lower().csgn() != this->upper().csgn())
+        this->tightenInterval();
+
+    if (this->lower().csgn() >= 0)
+        return *this;
+
+    polynomial.negate();
+    const GiNaC::numeric a = this->lower(), b = this->upper();
+    rootinterval.assign(-b, -a);
+
+    return *this;
+}
+
+inline Algebraic & Algebraic::mul(const GiNaC::numeric & a)
+{
+    assert(a.is_rational());
+
+    if (a.is_zero())
+    {
+        *this = Algebraic();
+        return *this;
+    }
+
+    GiNaC::numeric l = this->lower(), u = this->upper();
+
+    if (a.is_positive())
+        rootinterval.assign(a*l, a*u);
+    else
+        rootinterval.assign(a*u, a*l);
+
+    polynomial.subs(a.inverse()*PolynomialQ::GetVar());
+
+    assert(lower() <= upper());
+    assert(lower().is_rational());
+    assert(upper().is_rational());
+
+    return *this;
+}
+
+/*!
+ * \todo Double check that the max degree of an irreducible polynomial over
+ *		 the rationals is 2 (its not, duh).
+ */
+inline GiNaC::numeric Algebraic::Approximate() const
+{
+    assert(Invariants());
+
+    Algebraic temp(*this);
+
+    while (temp.upper() - temp.lower() > GiNaC::numeric(1,1000))
+        temp.tightenInterval();
+/*
+    GiNaC::numeric value = GiNaC::fsolve(polynomial.getEx(),
+                                         polynomial.getVariable(),
+                                         temp.lower(), //rootinterval.lower(),
+                                         temp.upper()); //rootinterval.upper());
+
+    return value;*/
+    return temp.lower();
+}
+
+inline GiNaC::numeric Algebraic::approx(unsigned int d) const
+{
+    assert(Invariants());
+
+    Algebraic temp(*this);
+
+    while (temp.upper() - temp.lower() > GiNaC::numeric(1,pow(10,d)))
+        temp.tightenInterval();
+
+    return (temp.lower()+temp.upper())/2;
+}
+
+/*!
+ * \detail Modifies the parameters by resizing the intervals until they do not
+ *         intersect.
+ */
+inline void Algebraic::SeparateIntervals(Algebraic & a, Algebraic & b)
+{
+    assert(a.Invariants());
+    assert(b.Invariants());
+
+    while ( !(a.upper() < b.lower() || b.upper() < a.lower()) )
+    {
+        a.tightenInterval();
+        b.tightenInterval();
+    }
+}
+
+inline Algebraic Algebraic::MakeRational(const GiNaC::numeric & a)
+{
+    Algebraic alpha(PolynomialQ::GetVar() - a, IntervalQ(a, a));
+
+    return alpha;
+}
+
+inline Algebraic Algebraic::MakeWideRational(const GiNaC::numeric & a)
+{
+    Algebraic alpha(PolynomialQ::GetVar() - a,
+                    IntervalQ(a-__DELTA, a+__DELTA));
+
+    return alpha;
+}
+
+inline bool operator==(const Algebraic & alpha, const Algebraic & beta)
+{
+    assert(alpha.Invariants());
+    assert(beta.Invariants());
+
+    return (alpha.compare(beta) == 0);
+}
+
+inline bool operator!=(const Algebraic & alpha, const Algebraic & beta)
+{
+    assert(alpha.Invariants());
+    assert(beta.Invariants());
+
+    return (alpha.compare(beta) != 0);
+}
+
+inline bool operator<(const Algebraic & alpha, const Algebraic & beta)
+{
+    assert(alpha.Invariants());
+    assert(beta.Invariants());
+
+    return (alpha.compare(beta) == -1);
+}
+
+inline bool operator<=(const Algebraic & alpha, const Algebraic & beta)
+{
+    assert(alpha.Invariants());
+    assert(beta.Invariants());
+
+    return (alpha.compare(beta) <= 0);
+}
+
+inline bool operator>(const Algebraic & alpha, const Algebraic & beta)
+{
+    assert(alpha.Invariants());
+    assert(beta.Invariants());
+
+    return (alpha.compare(beta) == 1);
+}
+
+inline bool operator>=(const Algebraic & alpha, const Algebraic & beta)
+{
+    assert(alpha.Invariants());
+    assert(beta.Invariants());
+
+    return (alpha.compare(beta) >= 0);
+}
+
+inline std::ostream & operator<<(std::ostream & output, const Algebraic & alpha)
+{
+    output << "( [" << GiNaC::ex(alpha.lower()) << ", " << GiNaC::ex(alpha.upper())
+    	   << "], " << alpha.getEx() << " )";
+
+    return output;
+}
 
 #endif // __ALGEBRAIC__
