@@ -331,11 +331,11 @@ std::vector<PolynomialQ> CAD::Project(const std::vector<PolynomialQQ> & F)
     std::vector<PolynomialQQ> G = PolynomialQQ::IrreducibleFactors(F);
     std::vector<PolynomialQ> P;
 
-    for (std::vector<PolynomialQQ>::size_type i = 0;        i < G.size()-1; i++)
-        for (std::vector<PolynomialQQ>::size_type j = i+1;  j < G.size();   j++)
+    for (PolynomialQQ::vector::size_type i = 0;        i < G.size()-1; i++)
+        for (PolynomialQQ::vector::size_type j = i+1;  j < G.size();   j++)
             P.push_back(PolynomialQQ::Resultant(G[i], G[j], 2));
 
-    for (std::vector<PolynomialQQ>::size_type i = 0;        i < G.size(); i++)
+    for (PolynomialQQ::vector::size_type i = 0;        i < G.size(); i++)
         P.push_back(PolynomialQQ::Resultant(G[i], G[i].getDerivative(2), 2));
 
     return PolynomialQ::IrreducibleFactors(P);
@@ -418,7 +418,7 @@ std::vector<Algebraic>
                                           fs,
                                           1));
 
-    std::vector<Algebraic> P = PolynomialQ::FindRoots(r.getIrreducibleFactors());
+    std::vector<Algebraic> P = PolynomialQ::FindRoots(*r.getIrreducibleFactors<PolynomialQ::vector>());
     std::vector<Algebraic> R;
     R.reserve(P.size());
 

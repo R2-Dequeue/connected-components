@@ -11,13 +11,15 @@
 #include <vector>
 #include <memory>
 
-#include <boost/numeric/interval.hpp>
+//#include <boost/numeric/interval.hpp>
 #include <boost/foreach.hpp>
 
 #include <ginac/ginac.h>
 
-//! This type represents the interval in class Algebraic.
-typedef boost::numeric::interval<GiNaC::numeric> IntervalQ;
+// //! This type represents the interval in class Algebraic.
+//typedef boost::numeric::interval<GiNaC::numeric> IntervalQ;
+
+#include "intervalq.hpp"
 
 class Algebraic; // To allow circular dependancy.
 
@@ -39,9 +41,10 @@ private:
 
 public:
 
-    typedef typename std::vector<PolynomialQ> vector;
-    typedef typename std::set<PolynomialQ>    set;
-    typedef typename std::list<PolynomialQ>   list;
+    typedef std::vector<PolynomialQ> vector;
+    typedef std::set<PolynomialQ>    set;
+    typedef std::list<PolynomialQ>   list;
+    typedef unsigned int size_type;
 
 	PolynomialQ(); //!< The default constructor.
 	PolynomialQ(const std::string & s); //!< Parse a polynomial from a string.
@@ -49,7 +52,7 @@ public:
 	PolynomialQ(const GiNaC::ex & e);
 	PolynomialQ(const GiNaC::numeric & n);
 
-    int degree() const;         //!< The degree of the polynomial.
+    size_type degree() const;         //!< The degree of the polynomial.
     bool isMonic() const;       //!< True iff the leading coefficient is 1.
 	bool isZero() const;        //!< True iff the polynomial is '0'.
 	bool isIrreducible() const; //!< True iff irreducible over the rationals.
@@ -189,7 +192,7 @@ inline PolynomialQ::PolynomialQ(const GiNaC::numeric & n) : polynomial(n)
  *         that the degree of the polynomial '0' is 0 and not -1 as it is
  *         sometimes defined.
  */
-inline int PolynomialQ::degree() const
+inline PolynomialQ::size_type PolynomialQ::degree() const
 {
 	assert(Invariants());
 
@@ -382,11 +385,11 @@ inline std::auto_ptr<PolynomialQ::vector> PolynomialQ::sturmseq() const
 
 template <typename T>
 inline void ReserveHelper(T & container, unsigned int n)
-{
-}
+{}
 
 template <>
-inline void ReserveHelper(Algebraic::vector & container, unsigned int n)
+inline void ReserveHelper< std::vector<Algebraic> >
+    (std::vector<Algebraic> & container, unsigned int n)
 {
     container.reserve(n);
 }
@@ -409,6 +412,17 @@ inline std::auto_ptr<T> PolynomialQ::getIrreducibleFactors() const
 }
 
 template <class T>
+inline void InsertMonic(T & factors, const GiNaC::ex & p)
+{
+    const PolynomialQ temp(p);
+
+    if (temp.isMonic())
+        factors.insert(factors.end(), temp);
+    else
+        factors.insert(factors.end(), temp.getMonic());
+}
+
+template <class T>
 T & PolynomialQ::addIrreducibleFactorsTo(T & factors) const
 {
     assert(Invariants());
@@ -417,24 +431,13 @@ T & PolynomialQ::addIrreducibleFactorsTo(T & factors) const
 
     if (GiNaC::is_a<GiNaC::power>(p))
     {
-        PolynomialQ temp(p.op(0));
-
-        if (temp.isMonic())
-            factors.insert(factors.end(), temp);
-        else
-            factors.insert(factors.end(), temp.getMonic());
-
+        InsertMonic(factors, p.op(0));
         return factors;
     }
     else if (!GiNaC::is_a<GiNaC::mul>(p))
     {
         if (!GiNaC::is_a<GiNaC::numeric>(p))
-        {
-            if (this->isMonic())
-                factors.insert(factors.end(), *this);
-            else
-                factors.insert(factors.end(), this->getMonic());
-        }
+            InsertMonic(factors, p);
         return factors;
     }
 
@@ -443,23 +446,9 @@ T & PolynomialQ::addIrreducibleFactorsTo(T & factors) const
         if (GiNaC::is_a<GiNaC::numeric>(*i))
             continue;
         else if (GiNaC::is_a<GiNaC::power>(*i))
-        {
-        	PolynomialQ temp((*i).op(0));
-
-        	if (temp.isMonic())
-                factors.insert(factors.end(), temp);
-            else
-                factors.insert(factors.end(), temp.getMonic());
-        }
+            InsertMonic(factors, (*i).op(0));
         else
-        {
-        	PolynomialQ temp(*i);
-
-        	if (temp.isMonic())
-                factors.insert(factors.end(), temp);
-            else
-                factors.insert(factors.end(), temp.getMonic());
-        }
+            InsertMonic(factors, *i);
 	}
 
     return factors;
@@ -539,6 +528,7 @@ std::auto_ptr<T> PolynomialQ::getRootsOfIrreducible() const
         return ptr;
 
     //numbers.reserve(numroots.to_int());
+    ReserveHelper(*ptr, numroots.to_int());
 
     while (true)
     {
