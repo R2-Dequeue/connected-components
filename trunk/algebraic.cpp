@@ -9,6 +9,43 @@
 
 //const GiNaC::numeric Algebraic::delta = GiNaC::numeric(1, 64);
 
+struct ModifyingSetCompare
+{
+bool operator()(Algebraic & lhs, Algebraic & rhs)
+{
+    assert(lhs.Invariants());
+    assert(rhs.Invariants());
+
+    if (lhs.polynomial != rhs.polynomial)
+        while (true)
+        {
+            if (lhs.rootinterval.lower() > rhs.rootinterval.upper())
+                return false;
+            if (lhs.rootinterval.upper() < rhs.rootinterval.lower())
+                return true;
+
+            lhs.tightenInterval();
+            rhs.tightenInterval();
+        }
+    else
+        while (true)
+        {
+            if (lhs.rootinterval.lower() >= rhs.rootinterval.lower() &&
+                lhs.rootinterval.upper() <= rhs.rootinterval.upper())
+                return false;
+            if (lhs.rootinterval.lower() > rhs.rootinterval.upper())
+                return false;
+            if (lhs.rootinterval.upper() < rhs.rootinterval.lower())
+                return true;
+
+            lhs.tightenInterval();
+        }
+
+    assert(false);
+    return true;
+}
+};
+
 /*!
  * \param B Any Algebraic number, including *this.
  * \return -1 if *this in less than B.
@@ -66,13 +103,13 @@ Algebraic & Algebraic::tightenInterval()
     const GiNaC::numeric m = (l + u)/2;
     const GiNaC::numeric sample = polynomial.eval(m);
 
-    if (sample == 0)
+    if (sample.is_zero())
         rootinterval.assign((l+m)/2, (u+m)/2);
     else
     {
         GiNaC::ex num = sample * polynomial.eval(u);
 
-        if (num <= 0)
+        if (num <= 0) // (num.is_positive()) faster?
             rootinterval.assign(m, u);
         else
             rootinterval.assign(l, m);

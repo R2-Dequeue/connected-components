@@ -14,6 +14,8 @@
 
 #include "polynomialq.hpp"
 
+struct ModifyingSetCompare;
+
 /*!
  * \brief A class representing an algebraic number.
  *
@@ -38,9 +40,10 @@ private:
 
 public:
 
-    typedef typename std::vector<Algebraic> vector;
-    typedef typename std::set<Algebraic>    set;
-    typedef typename std::list<Algebraic>   list;
+    typedef std::vector<Algebraic>                  vector;
+    typedef std::set<Algebraic>                     set;
+    typedef std::set<Algebraic,ModifyingSetCompare> modifying_set;
+    typedef std::list<Algebraic>                    list;
 
     //! The default constructor.
     Algebraic();
@@ -74,6 +77,7 @@ public:
     Algebraic & takeAbs();
     Algebraic & mul(const GiNaC::numeric & a);
     GiNaC::numeric Approximate() const; //!< A floating point approximation of this number.
+    int roundToInt();
     GiNaC::numeric approx(unsigned int d) const;
 
     //! Shrinks the internal intervals of a & b so that they don't intersect.
@@ -92,6 +96,7 @@ public:
 	bool Invariants() const;
 
 	friend class PolynomialQ;
+	friend struct ModifyingSetCompare;
 };
 
 #define __DELTA ( GiNaC::numeric(1, 64) )
@@ -302,13 +307,66 @@ inline GiNaC::numeric Algebraic::Approximate() const
     return temp.lower();
 }
 
+inline int Algebraic::roundToInt()
+{
+    assert(Invariants());
+
+    //return GiNaC::fsolve(polynomial.getEx(),
+    //                     PolynomialQ::GetVar(),
+    //                     rootinterval.lower(),
+    //                     rootinterval.upper());
+
+    const GiNaC::numeric delta(1, 10);
+
+    while (this->rootinterval.upper() - this->rootinterval.lower() > delta)
+        this->tightenInterval();
+
+    const GiNaC::numeric a =
+        (this->rootinterval.lower()+this->rootinterval.upper())/2;
+
+    // Round to nearest
+    // Round half away from zero for tie-breaking
+
+    assert(a.is_rational());
+
+    const GiNaC::numeric n = a.numer(), d = a.denom();
+
+    assert(n.is_integer());
+    assert(d.is_nonneg_integer());
+    assert(GiNaC::gcd(n, d) == 1);
+
+    GiNaC::numeric rem;
+    const GiNaC::numeric quo = GiNaC::iquo(n, d, rem);
+
+    assert(quo.is_integer());//(quo.is_nonneg_integer());
+    assert(rem.is_integer());
+    assert(rem.is_zero() || rem.csgn() == n.csgn());
+
+    if (a.is_positive())
+    {
+        if (rem < d/2)
+            return quo.to_int();
+        else
+            return (quo.to_int()+1);
+    }
+
+    if (rem <= (d*(-1))/2)
+        return (quo.to_int()*(-1)-1);
+    else
+        return (quo.to_int()*(-1));
+}
+
 inline GiNaC::numeric Algebraic::approx(unsigned int d) const
 {
     assert(Invariants());
 
     Algebraic temp(*this);
 
-    while (temp.upper() - temp.lower() > GiNaC::numeric(1,pow(10,d)))
+    const GiNaC::numeric denom = GiNaC::pow(GiNaC::numeric(10),
+                                            GiNaC::numeric(d));
+    const GiNaC::numeric delta(denom.inverse());
+
+    while (temp.upper() - temp.lower() > delta)
         temp.tightenInterval();
 
     return (temp.lower()+temp.upper())/2;
