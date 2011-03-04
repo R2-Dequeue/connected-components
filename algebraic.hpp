@@ -53,8 +53,10 @@ public:
     // can I make a constructor that will only take STATIC ints or longs?
     // (for initialization).
 
-    GiNaC::numeric lower() const; //!< Returns the lower bound of the interval.
-    GiNaC::numeric upper() const; //!< Returns the upper bound of the interval.
+    //! Returns the lower bound of the interval.
+    const GiNaC::numeric & lower() const;
+    //!< Returns the upper bound of the interval.
+    const GiNaC::numeric & upper() const;
 
     bool isZero() const;
     bool isNonZero() const;
@@ -66,9 +68,9 @@ public:
     bool isInteger() const;
     bool isNatural() const;     //!< true iff alpha is in {1,2,3,4,...}.
 
-    IntervalQ getInterval() const;
-    GiNaC::ex getEx() const;
-    PolynomialQ getPolynomial() const;
+    const IntervalQ & getInterval() const;
+    const GiNaC::ex & getEx() const;
+    const PolynomialQ & getPolynomial() const;
     Algebraic getAbs() const; //!< Return the absolute value of alpha.
 
     int sgn() const;
@@ -79,6 +81,8 @@ public:
     GiNaC::numeric Approximate() const; //!< A floating point approximation of this number.
     int roundToInt();
     GiNaC::numeric approx(unsigned int d) const;
+
+    std::string getString() const;
 
     //! Shrinks the internal intervals of a & b so that they don't intersect.
     static void SeparateIntervals(Algebraic & a, Algebraic & b);
@@ -114,14 +118,14 @@ inline Algebraic::Algebraic(const PolynomialQ & p, const IntervalQ & i)
     assert(Invariants());
 }
 
-inline GiNaC::numeric Algebraic::lower() const
+inline const GiNaC::numeric & Algebraic::lower() const
 {
     assert(Invariants());
 
     return rootinterval.lower();
 }
 
-inline GiNaC::numeric Algebraic::upper() const
+inline const GiNaC::numeric & Algebraic::upper() const
 {
     assert(Invariants());
 
@@ -132,7 +136,7 @@ inline bool Algebraic::isZero() const
 {
     assert(Invariants());
 
-    return (polynomial == PolynomialQ(GiNaC::ex(PolynomialQ::GetVar())));
+    return (polynomial.getEx() == GiNaC::ex(PolynomialQ::GetVar()));
 }
 
 inline bool Algebraic::isNonZero() const
@@ -184,21 +188,21 @@ inline bool Algebraic::isNatural() const
             polynomial.getCoeff(0).is_negative());// x+a=0 => x=-a
 }
 
-inline IntervalQ Algebraic::getInterval() const
+inline const IntervalQ & Algebraic::getInterval() const
 {
     assert(Invariants());
 
-    return IntervalQ(rootinterval);
+    return rootinterval;
 }
 
-inline GiNaC::ex Algebraic::getEx() const
+inline const GiNaC::ex & Algebraic::getEx() const
 {
     assert(Invariants());
 
     return polynomial.getEx();
 }
 
-inline PolynomialQ Algebraic::getPolynomial() const
+inline const PolynomialQ & Algebraic::getPolynomial() const
 {
     assert(Invariants());
 

@@ -101,6 +101,13 @@ A public Invariants() method for all classes.
 // this->SaveIrreducibleFactorsAt(std::vector<Algebraic> & factors);
 // this->SaveIrreducibleFactorsIn(std::vector<Algebraic> & factors);
 -------------------------------------------------------------------------------
+Functions:
+Lemniscate (infinity symbol): (x^2 + y^2)^2 + (x^2 - y^2)
+Tschirnhausen cubic: x^3 + 3*x^2 - y^2
+4 flower petals/4-leaf clover: (x^2 + y^2)^4 - (x^2 - y^2)^2
+Folium of Descartes: x^3 + y^3 - 3*a*x*y
+x^3 - a*x - y^2 + b (ie. x^3 - 7*x - y^2 + 6)
+-------------------------------------------------------------------------------
 
 
 
