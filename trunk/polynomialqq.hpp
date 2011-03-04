@@ -29,10 +29,10 @@ private:
 
 public:
 
-    typedef std::vector<PolynomialQQ> vector;
-    typedef std::set<PolynomialQQ>    set;
-    typedef std::list<PolynomialQQ>   list;
-    typedef unsigned int size_type;
+    typedef std::vector<PolynomialQQ>   vector;
+    typedef std::set<PolynomialQQ>      set;
+    typedef std::list<PolynomialQQ>     list;
+    typedef unsigned int                size_type;
 
     PolynomialQQ();//!< The default constructor.
     PolynomialQQ(const std::string & s);
@@ -46,7 +46,7 @@ public:
 	bool isIrreducible() const;
     bool isConstant() const;
 
-    GiNaC::ex getEx() const;
+    const GiNaC::ex & getEx() const;
     PolynomialQQ getDerivative(unsigned int variable) const;
 
     PolynomialQ subx(const GiNaC::numeric & a) const;
@@ -208,11 +208,9 @@ inline bool PolynomialQQ::isConstant() const
 	return (GiNaC::is_a<GiNaC::numeric>(polynomial));
 }
 
-inline GiNaC::ex PolynomialQQ::getEx() const
+inline const GiNaC::ex & PolynomialQQ::getEx() const
 {
-    GiNaC::ex temp(polynomial);
-
-    return temp;
+    return polynomial;
 }
 
 inline PolynomialQQ PolynomialQQ::getDerivative(unsigned int variable) const

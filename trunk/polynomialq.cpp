@@ -42,11 +42,17 @@ const GiNaC::symbol & PolynomialQ::variable = PolynomialBase::var1;
 
 /*!
  * \detail a must be less than b.
+ * \todo Fix old code and uncomment.
  */
 unsigned int PolynomialQ::sturm(const GiNaC::numeric & a,
                                 const GiNaC::numeric & b) const
 {
-    PolynomialQ p2(*this);
+    PolynomialQ::vector polynomials;
+    polynomials.reserve(this->degree()+2);
+    this->sturmseq(polynomials);
+    return PolynomialQ::sturm(polynomials, a, b);
+
+    /*PolynomialQ p2(*this);
     PolynomialQ p1(this->getDerivative());
 
     GiNaC::numeric  f2 = p2.eval(a),    g2 = p2.eval(b);
@@ -56,7 +62,7 @@ unsigned int PolynomialQ::sturm(const GiNaC::numeric & a,
     if (f2 != 0) // if == 0 then do nothing
     {
     	if (fa == 0)
-    		fa == f2;
+    		fa = f2;
     	else
     		if (GiNaC::csgn(fa) != GiNaC::csgn(f2))
     			va = 1;
@@ -65,7 +71,7 @@ unsigned int PolynomialQ::sturm(const GiNaC::numeric & a,
     if (g2 != 0) // if == 0 then do nothing
     {
     	if (gb == 0)
-    		gb == g2;
+    		gb = g2;
     	else
     		if (GiNaC::csgn(gb) != GiNaC::csgn(g2))
     			vb = 1;
@@ -98,7 +104,7 @@ unsigned int PolynomialQ::sturm(const GiNaC::numeric & a,
 
     assert(int(va)-int(vb) >= 0);
 
-    return (va - vb);
+    return (va - vb);*/
 }
 
 int PolynomialQ::signAt(const Algebraic & a) const
@@ -229,6 +235,22 @@ std::auto_ptr<PolynomialQ::vector> PolynomialQ::sturmseq(const PolynomialQ & p)
 }
 
 /*!
+ * \param p Any polynomial (including zero and other constants).
+ */
+PolynomialQ::vector & PolynomialQ::sturmseq(PolynomialQ::vector & polys) const
+{
+    //polys.reserve(p.degree()+2);
+    polys.push_back(*this);
+    polys.push_back(this->getDerivative());
+
+    while (!polys.back().isZero())
+        polys.push_back((polys[polys.size()-2] % polys.back())*(-1));
+    polys.pop_back();
+
+    return polys;
+}
+
+/*!
  * \detail a < b.
  */
 unsigned int PolynomialQ::sturm(const std::vector<PolynomialQ> & F,
@@ -242,14 +264,14 @@ unsigned int PolynomialQ::sturm(const std::vector<PolynomialQ> & F,
 
     GiNaC::numeric f2 = F[0].eval(a), g2 = F[0].eval(b);
     GiNaC::numeric fa = F[1].eval(a), gb = F[1].eval(b);
-    unsigned int va = 0,            vb = 0;
+    unsigned int   va = 0,            vb = 0;
 
     if (f2 != 0) // if == 0 then do nothing
     {
     	if (fa == 0)
     		fa = f2;
     	else
-    		if (fa*f2 < 0) //(csgn(fa) != csgn(f2))
+    		if (fa.csgn() != f2.csgn())
     			va = 1;
     }
 
@@ -258,7 +280,7 @@ unsigned int PolynomialQ::sturm(const std::vector<PolynomialQ> & F,
     	if (gb == 0)
     		gb = g2;
     	else
-    		if (gb*g2 < 0) //(csgn(gb) != csgn(g2))
+    		if (gb.csgn() != g2.csgn())
     			vb = 1;
     }
 
@@ -269,16 +291,16 @@ unsigned int PolynomialQ::sturm(const std::vector<PolynomialQ> & F,
     	if (alpha != 0)
     	{
     		if (fa != 0)
-    			if (alpha *fa < 0) //(csgn(alpha) != csgn(fa))
-    				va++;
+    			if (alpha.csgn() != fa.csgn())
+    				++va;
     		fa = alpha;
     	}
 
     	if (beta != 0)
     	{
     		if (gb != 0)
-    			if (beta*gb < 0) //(csgn(beta) != csgn(gb))
-    				vb++;
+    			if (beta.csgn() != gb.csgn())
+    				++vb;
     		gb = beta;
     	}
     }

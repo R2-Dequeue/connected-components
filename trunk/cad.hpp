@@ -19,7 +19,8 @@
 #include "algebraic.hpp"
 
 //! The type used for the connectivity matrix.
-typedef boost::numeric::ublas::symmetric_matrix<unsigned char> uBitMatrix;
+//typedef boost::numeric::ublas::symmetric_matrix<int,boost::numeric::ublas::upper>
+//    uBitMatrix;
 //! Represents a point in the plane.
 typedef std::pair<Algebraic, Algebraic> Point;
 /*!
@@ -57,8 +58,9 @@ private:
         std::vector<char> signs; // -1, 0, or 1
     };
 
-    std::vector<PolynomialQQ> F; //!< The set of polynomials dividing the plane.
-    std::vector<Algebraic> samples; //!< x-coords of vertical dividing lines.
+    PolynomialQQ::vector F; //!< The set of polynomials dividing the plane.
+    PolynomialQQ::vector irreducibles;
+    Algebraic::vector alphas; //!< x-coords of vertical dividing lines.
     std::vector< std::vector<Sample> > stacks; //!< The CAD proper.
     /*!
      * \brief Stores the connectivity information.
@@ -66,7 +68,8 @@ private:
      *         reflexive (m_i,i == 1). Entries are either 0 or 1.
      * \todo Use bitset-like class for better storage.
      */
-    uBitMatrix cMatrix;
+    GiNaC::matrix cMatrix;
+    std::vector< std::vector<unsigned int> > partitions;
 
 public:
 
@@ -98,12 +101,15 @@ public:
 private:
 
     //! Calculates the connectivity matrix based on the private CAD.
-    void ConnectivityMatrix();
+    void MakeConnectivityMatrix();
+    void Partition();
 
     CellIndex BranchCount(const CellIndex & ci);
 
-    void AdjacencyLeft(const unsigned int k);
-    void AdjacencyRight(const unsigned int k);
+    std::vector< std::pair<CellIndex, CellIndex> >
+        AdjacencyLeft(const unsigned int k);
+    std::vector< std::pair<CellIndex, CellIndex> >
+        AdjacencyRight(const unsigned int k);
 
     static std::vector<PolynomialQ>
         Project(const std::vector<PolynomialQQ> & F);

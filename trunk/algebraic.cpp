@@ -6,6 +6,7 @@
 #include "algebraic.hpp"
 
 #include <cassert>
+#include <sstream>
 
 //const GiNaC::numeric Algebraic::delta = GiNaC::numeric(1, 64);
 
@@ -98,8 +99,8 @@ Algebraic & Algebraic::tightenInterval()
 {
     assert(Invariants());
 
-    const GiNaC::numeric l = rootinterval.lower(),
-                         u = rootinterval.upper(); // invoke copy cons?
+    const GiNaC::numeric & l = rootinterval.lower(),
+                         & u = rootinterval.upper(); // invoke copy cons?
     const GiNaC::numeric m = (l + u)/2;
     const GiNaC::numeric sample = polynomial.eval(m);
 
@@ -107,12 +108,14 @@ Algebraic & Algebraic::tightenInterval()
         rootinterval.assign((l+m)/2, (u+m)/2);
     else
     {
-        GiNaC::ex num = sample * polynomial.eval(u);
+        const GiNaC::ex num = sample * polynomial.eval(u);
 
         if (num <= 0) // (num.is_positive()) faster?
-            rootinterval.assign(m, u);
+            //rootinterval.assign(m, u);
+            rootinterval.assignLower(m);
         else
-            rootinterval.assign(l, m);
+            //rootinterval.assign(l, m);
+            rootinterval.assignUpper(m);
     }
 
     return *this;
@@ -152,4 +155,11 @@ bool Algebraic::Invariants() const
     	return false;
 
     return true;
+}
+
+std::string Algebraic::getString() const
+{
+    std::stringstream s;
+    s << *this;
+    return s.str();
 }
