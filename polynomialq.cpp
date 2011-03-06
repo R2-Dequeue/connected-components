@@ -257,7 +257,7 @@ unsigned int PolynomialQ::sturm(const std::vector<PolynomialQ> & F,
                                 const GiNaC::numeric & a,
                                 const GiNaC::numeric & b)
 {
-    assert(a <= b);
+    assert(a < b);
 
     if (F.size() == 1)
         return 0;
@@ -308,6 +308,95 @@ unsigned int PolynomialQ::sturm(const std::vector<PolynomialQ> & F,
     assert(int(va) - int(vb) >= 0);
 
     return (va - vb);
+}
+
+/*!
+ * \detail a < b.
+ */
+unsigned int
+    PolynomialQ::sturm(const std::vector<PolynomialQ> & F,
+                       boost::tuple<GiNaC::numeric, bool, unsigned int, bool> & a,
+                       boost::tuple<GiNaC::numeric, bool, unsigned int, bool> & b)
+{
+    assert(a.get<0>() < b.get<0>());
+
+    if (a.get<1>() && b.get<1>())
+        return (a.get<2>() - b.get<2>());
+
+    if (F.size() == 1)
+        return 0;
+
+    if (!a.get<1>())
+    {
+        GiNaC::numeric f2 = F[0].eval(a.get<0>());
+        GiNaC::numeric fa = F[1].eval(a.get<0>());
+        unsigned int   va = 0;
+
+        a.get<3>() = f2.is_zero();
+
+        if (f2 != 0) // if == 0 then do nothing
+        {
+            if (fa == 0)
+                fa = f2;
+            else
+                if (fa.csgn() != f2.csgn())
+                    va = 1;
+        }
+
+        for (unsigned int i = 2; i < F.size(); ++i)
+        {
+            GiNaC::numeric alpha = F[i].eval(a.get<0>());
+
+            if (alpha != 0)
+            {
+                if (fa != 0)
+                    if (alpha.csgn() != fa.csgn())
+                        ++va;
+                fa = alpha;
+            }
+        }
+
+        a.get<1>() = true;
+        a.get<2>() = va;
+    }
+
+    if (!b.get<1>())
+    {
+        GiNaC::numeric g2 = F[0].eval(b.get<0>());
+        GiNaC::numeric gb = F[1].eval(b.get<0>());
+        unsigned int   vb = 0;
+
+        b.get<3>() = g2.is_zero();
+
+        if (g2 != 0) // if == 0 then do nothing
+        {
+            if (gb == 0)
+                gb = g2;
+            else
+                if (gb.csgn() != g2.csgn())
+                    vb = 1;
+        }
+
+        for (unsigned int i = 2; i < F.size(); ++i)
+        {
+            GiNaC::numeric beta  = F[i].eval(b.get<0>());
+
+            if (beta != 0)
+            {
+                if (gb != 0)
+                    if (beta.csgn() != gb.csgn())
+                        ++vb;
+                gb = beta;
+            }
+        }
+
+        b.get<1>() = true;
+        b.get<2>() = vb;
+    }
+
+    assert(int(a.get<2>()) - int(b.get<2>()) >= 0);
+
+    return (a.get<2>() - b.get<2>());
 }
 
 /*!
