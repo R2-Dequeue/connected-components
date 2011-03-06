@@ -11,8 +11,8 @@
 #include <vector>
 #include <memory>
 
-//#include <boost/numeric/interval.hpp>
 #include <boost/foreach.hpp>
+#include <boost/tuple/tuple.hpp>
 
 #include <ginac/ginac.h>
 
@@ -90,6 +90,9 @@ public:
     static unsigned int sturm(const PolynomialQ::vector & F,
                               const GiNaC::numeric & a,
                               const GiNaC::numeric & b);
+    static unsigned int sturm(const std::vector<PolynomialQ> & F,
+                       boost::tuple<GiNaC::numeric, bool, unsigned int, bool> & a,
+                       boost::tuple<GiNaC::numeric, bool, unsigned int, bool> & b);
 	static std::vector<PolynomialQ>
         IrreducibleFactors(const std::vector<PolynomialQ> & F);
     static GiNaC::numeric
@@ -509,10 +512,10 @@ inline std::auto_ptr<T> PolynomialQ::getRoots() const
 
     return ptr;
 }
-
+/*
 template <class T> T & PolynomialQ::addRootsOfIrreducibleTo(T & roots) const
 {
-    unsigned int d = this->degree();
+    const unsigned int d = this->degree();
 
     if (d <= 0)
         return roots;
@@ -578,7 +581,83 @@ template <class T> T & PolynomialQ::addRootsOfIrreducibleTo(T & roots) const
 
     return roots;
 }
+*/
+template <class T> T & PolynomialQ::addRootsOfIrreducibleTo(T & roots) const
+{
+    const unsigned int d = this->degree();
 
+    if (d <= 0)
+        return roots;
+
+    PolynomialQ::vector F;
+    F.reserve(d + 2);
+    this->sturmseq(F);
+
+    GiNaC::numeric R = 0;
+
+    for (unsigned int i = 0; i < d; ++i)
+        if (GiNaC::abs(this->getCoeff(i)) > R)
+            R = GiNaC::abs(this->getCoeff(i));
+
+    R /= GiNaC::abs(this->getCoeff(d));
+    ++R;
+
+    // All real roots of *this are in [-R, R].
+
+    // < number, isValid, # sign changes, isRoot >
+    typedef boost::tuple<GiNaC::numeric, bool, unsigned int, bool> aPoint;
+
+    //GiNaC::numeric L = -R, U = R, L1, U1, NU;
+    aPoint L = boost::make_tuple(-R, false, 0, false),
+           U = boost::make_tuple(R, false, 0, false), L1, U1, NU;
+    unsigned int numroots = PolynomialQ::sturm(F, L, U);
+    unsigned int numroots1;
+
+    if (numroots == 0)
+        return roots;
+
+    while (true)
+    {
+        if (numroots == 1)
+        {
+            PushBack(roots, Algebraic(*this, IntervalQ(L.get<0>(),
+                                                       U.get<0>())));
+            break;
+        }
+
+        L1 = L;
+        U1 = U;
+
+        while (true)
+        {
+            NU.get<0>() = (L1.get<0>()+U1.get<0>()) / 2;
+            NU.get<1>() = false;
+            numroots1 = PolynomialQ::sturm(F,L1,NU);
+
+            if (numroots1 < numroots)
+            {
+                if (numroots1 == 1)
+                {
+                    PushBack(roots, Algebraic(*this, IntervalQ(L1.get<0>(),
+                                                               NU.get<0>())));
+                    U1 = NU;
+                    break;
+                }
+                else if (numroots1 == 0)
+                    L1 = NU;
+                else
+                    U1 = NU;
+            }
+            else
+                U1 = NU;
+        }
+
+        L = U1;
+        numroots = PolynomialQ::sturm(F, L, U);
+    }
+
+    return roots;
+}
 /*!
  * \detail *this must be irreducible.
  */
