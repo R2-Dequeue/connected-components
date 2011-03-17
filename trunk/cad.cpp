@@ -10,72 +10,8 @@
 //#include <functional>
 
 #include <boost/foreach.hpp>
-#include <boost/numeric/ublas/io.hpp>
 
-/*!
- * \throws parse_error Thrown by GiNaC if parsing of polynomials fails (inherits
- *		   invalid_argument).
- * \todo Check if doxygen collates all 'throws' statements from called
- *		 functions.
- */
-CAD::CAD(const std::vector<std::string> & F)
-{
-    // Be careful with 'F' and 'this->F'.
-
-    for (std::vector<std::string>::const_iterator f = F.begin(), e = F.end();
-         f != e; ++f)
-        this->F.push_back(PolynomialQQ(*f)); // throws on error
-
-    PolynomialQQ::vector temp;
-    for (PolynomialQQ::vector::const_iterator f = this->F.begin(),
-                                              e = this->F.end();
-         f != e; ++f)
-        f->addIrreducibleFactorsTo(temp);
-
-    for (PolynomialQQ::vector::iterator i = temp.begin(), e = temp.end();
-        i != e; ++i)
-        if (find(this->irreducibles.begin(), this->irreducibles.end(), *i) ==
-            this->irreducibles.end())
-            this->irreducibles.push_back(*i);
-
-    alphas = CAD::SamplePoints(PolynomialQ::FindRoots(CAD::Project(this->F)));
-
-    stacks.reserve(alphas.size());
-
-    for (Algebraic::vector::iterator alpha = alphas.begin(), e = alphas.end();
-         alpha != e;
-         ++alpha)
-    {
-        std::vector<Algebraic> betas =
-            CAD::SamplePoints(CAD::FindRoots2(*alpha, this->F));
-
-        stacks.push_back(std::vector<Sample>()); // Should I name this parameter?
-        std::vector<Sample> & T = stacks.back();
-
-        T.reserve(betas.size());
-
-        BOOST_FOREACH(const Algebraic & beta, betas)
-        {
-            std::vector<char> signs(this->F.size()); // preallocate
-
-            for (std::vector<char>::size_type i = 0, e = this->F.size();
-                 i < e;
-                 ++i)
-                signs[i] = this->F[i].signAt(*alpha, beta);
-
-            T.push_back(Sample(beta, signs));
-        }
-    }
-
-    MakeConnectivityMatrix();
-
-    Partition();
-
-    // maybe this should be an assert?
-    if (!Invariants())
-        throw std::logic_error("CAD Constructor: CAD creation completed, but"
-                               "the result is not canonical.");
-}
+#include "templatehelp.hpp"
 
 bool CAD::Connectivity(const Point & p1, const Point & p2) const
 {
@@ -85,7 +21,7 @@ bool CAD::Connectivity(const Point & p1, const Point & p2) const
                     CellNumber(Cell(p2))) == 1);
 }
 
-CellIndex CAD::Cell(const Point & p) const
+StacksIndex CAD::Cell(const Point & p) const
 {
     assert(Invariants());
 
@@ -127,19 +63,10 @@ CellIndex CAD::Cell(const Point & p) const
 		}
 	}
 
-	return CellIndex(ix, iy);
+	return StacksIndex(ix, iy);
 }
 
-void MatrixOut(GiNaC::matrix & M)
-{
-    using std::cout;
-    using std::endl;
-    typedef unsigned int uint;
-
-    cout << M << endl;
-}
-
-unsigned int CAD::CellNumber(const CellIndex & i) const
+unsigned int CAD::CellNumber(const StacksIndex & i) const
 {
     // Indices start at 0, not 1.
     assert(Invariants());
@@ -154,6 +81,80 @@ unsigned int CAD::CellNumber(const CellIndex & i) const
     num += i.second;
 
     return num;
+}
+
+bool CAD::SignsNonzero(const std::vector<char> & s)
+{
+    for (unsigned int i = 0, e = s.size(); i < e; ++i)
+        if (s[i] == 0)
+            return false;
+
+    return true; // ( std::find(s.begin(), s.end(), 0) == s.end() )
+}
+
+bool CAD::SignsEqual(const std::vector<char> & S1, const std::vector<char> & S2)
+{
+    if (S1.size() != S2.size())
+    {
+        int i;
+        i = 5;
+        ++i;
+    }
+    assert(S1.size() == S2.size());
+
+    for (std::vector<char>::size_type i = 0, e = S1.size(); i < e; ++i)
+        if (S1[i] != S2[i])
+            return false;
+
+    return true; // std::equal(S1.begin(), S1.end(), S2.begin());
+}
+
+bool CAD::SignsDiffByOne(const std::vector<char> & s1,
+                         const std::vector<char> & s2)
+{
+    assert(s1.size() == s2.size());
+
+    unsigned int count = 0;
+
+    for (unsigned int i = 0, e = s1.size(); i < e; ++i)
+        if (s1[i] != s2[i])
+            ++count;
+
+    return (count == 1);
+}
+
+const CAD::Sample & CAD::RefCell(CellIndex i) const
+{
+    for (std::vector< std::vector<Sample> >::const_iterator s = stacks.begin(),
+         e = stacks.end(); s != e; ++s)
+    {
+        if (i < s->size())
+            return s->at(i);
+
+        i -= s->size();
+    }
+
+    assert(false);
+
+    return *(stacks.back().end());
+}
+
+bool CAD::areComponentsAdjacent(ComponentIndex i, ComponentIndex j) const
+{
+    assert(i < components.size());
+    assert(j < components.size());
+
+    return SignsDiffByOne(RefCell(partitions[components[i]][0]).signs,
+                          RefCell(partitions[components[j]][0]).signs);
+}
+
+void MatrixOut(GiNaC::matrix & M)
+{
+    using std::cout;
+    using std::endl;
+    typedef unsigned int uint;
+
+    cout << M << endl;
 }
 
 void CAD::out() const
@@ -219,6 +220,16 @@ void CAD::out() const
             cout << partitions[i][j] << " ";
         cout << endl;
     }
+
+    cout << "Components(" << components.size() << "): " << endl;
+
+    for (uint i = 0; i < components.size(); ++i)
+    {
+        cout << components[i] << ": ";
+        for (uint j = 0; j < partitions[components[i]].size(); ++j)
+            cout << partitions[components[i]][j] << " ";
+        cout << endl;
+    }
 }
 
 bool CAD::Invariants() const
@@ -254,6 +265,97 @@ bool CAD::Invariants() const
     return true;
 }
 
+void CAD::ConstructorPart2()
+{
+    const GiNaC::numeric delta(1,128);
+
+    for (unsigned int i = 0, e = this->F.size(); i < e; ++i)
+        this->F[i].addIrreducibleFactorsTo(this->irreducibles);
+    //tmp::Unique(this->irreducibles);
+    assert(tmp::IsUnique(this->irreducibles));
+
+    std::cout << "F's:" << std::endl;
+    for (PolynomialQQ::vector::const_iterator
+         f = this->F.begin(), e = this->F.end(); f != e; ++f)
+        std::cout << *f << std::endl;
+
+    std::cout << "irreducibles:" << std::endl;
+    for (PolynomialQQ::vector::const_iterator
+         f = this->irreducibles.begin(), e = this->irreducibles.end(); f != e; ++f)
+        std::cout << *f << std::endl;
+    std::cout << "end" << std::endl;
+
+    PolynomialQ::vector tempQ;
+    //tempQ.reserve
+    CAD::addIrreducibleProjectionTo(tempQ, this->irreducibles);
+    Algebraic::set setA;
+
+    for (PolynomialQ::vector::const_iterator f = tempQ.begin(), e = tempQ.end();
+         f != e; ++f)
+        f->addRootsTo(setA);
+
+    Algebraic::vector vectorA(setA.begin(), setA.end());
+
+    for (Algebraic::vector::const_iterator
+         v = vectorA.begin(), e = vectorA.end(); v != e; ++v)
+        std::cout << *v << std::endl;
+
+    std::cout << "****" << std::endl;
+
+    Algebraic::SeparateIntervals(vectorA, delta);
+    for (Algebraic::vector::const_iterator
+         v = vectorA.begin(), e = vectorA.end(); v != e; ++v)
+        std::cout << *v << std::endl;
+    std::cout << "****" << std::endl;
+    assert(tmp::IsSortedUnique(vectorA));
+
+    alphas.reserve(2*vectorA.size() + 1);
+    CAD::addSamplePointsTo(alphas, vectorA);
+    //alphas = CAD::SamplePoints(PolynomialQ::FindRoots(CAD::Project(this->F)));
+    assert(tmp::IsSortedUnique(alphas));
+
+    stacks.reserve(alphas.size());
+
+    for (Algebraic::vector::const_iterator
+         alpha = alphas.begin(), e = alphas.end(); alpha != e; ++alpha)
+        std::cout << *alpha << std::endl;
+
+    for (Algebraic::vector::iterator alpha = alphas.begin(), e = alphas.end();
+         alpha != e; ++alpha)
+    {
+        vectorA = CAD::FindRoots2(*alpha, this->F);
+        assert(tmp::IsSortedUnique(vectorA));
+        Algebraic::SeparateIntervals(vectorA, delta);
+        assert(tmp::IsSortedUnique(vectorA));
+        Algebraic::vector betas = CAD::SamplePoints(vectorA);
+        assert(tmp::IsSortedUnique(betas));
+
+        stacks.push_back(std::vector<Sample>()); // Should I name this parameter?
+        std::vector<Sample> & T = stacks.back();
+
+        T.reserve(betas.size());
+
+        BOOST_FOREACH(const Algebraic & beta, betas)
+        {
+            std::vector<char> signs(this->F.size()); // preallocate
+
+            for (unsigned int i = 0, e = this->F.size(); i < e; ++i)
+                signs[i] = this->F[i].signAt(*alpha, beta);
+
+            T.push_back(Sample(beta, signs));
+        }
+    }
+
+    MakeConnectivityMatrix();
+
+    Partition();
+
+    // maybe this should be an assert?
+    if (!Invariants())
+        throw std::logic_error("CAD Constructor: CAD creation completed, but"
+                               "the result is not canonical.");
+}
+
 void CAD::MakeConnectivityMatrix()
 {
     typedef unsigned int uint;
@@ -270,9 +372,9 @@ void CAD::MakeConnectivityMatrix()
 
 	for (unsigned int k = 1; k < stacks.size(); k += 2)
 	{
-	    std::vector< std::pair<CellIndex, CellIndex> > A =
+	    std::vector< std::pair<StacksIndex, StacksIndex> > A =
             this->AdjacencyLeft(k);
-        std::vector< std::pair<CellIndex, CellIndex> >::iterator c, e;
+        std::vector< std::pair<StacksIndex, StacksIndex> >::iterator c, e;
         for (c = A.begin(), e = A.end(); c != e; ++c)
         {
             uint i = CellNumber(c->first), j = CellNumber(c->second);
@@ -322,13 +424,16 @@ void CAD::Partition()
 
         if (k >= partitions.size())
             partitions.push_back(cells);
+    }
 
-        // if (cells in partition)
-        //     partitions.push_back(cells);
+    for (PartitionIndex i = 0; i < partitions.size(); ++i)
+    {
+        if (SignsNonzero(RefCell(partitions[i][0]).signs))
+            components.push_back(i);
     }
 }
 
-CellIndex CAD::BranchCount(const CellIndex & ci)
+StacksIndex CAD::BranchCount(const StacksIndex & ci)
 {
     Algebraic & x = alphas[ci.first];
     Algebraic & y = stacks[ci.first][ci.second].y;
@@ -356,21 +461,10 @@ CellIndex CAD::BranchCount(const CellIndex & ci)
         R += f->subx(x.upper()).sturm(y.lower(), y.upper());
     }
 
-    return CellIndex(L, R);
+    return StacksIndex(L, R);
 }
 
-bool ContainersEqual(const std::vector<char> & S1, const std::vector<char> & S2)
-{
-    assert(S1.size() == S2.size());
-
-    for (std::vector<char>::size_type i = 0, e = S1.size(); i < e; ++i)
-        if (S1[i] != S2[i])
-            return false;
-
-    return true;
-}
-
-std::vector< std::pair<CellIndex, CellIndex> >
+std::vector< std::pair<StacksIndex, StacksIndex> >
     CAD::AdjacencyLeft(const unsigned int k)
 {
     assert(Invariants());
@@ -380,13 +474,13 @@ std::vector< std::pair<CellIndex, CellIndex> >
     typedef unsigned int uint;
 
     std::vector<uint> r; // Find a cap so I can use 'reserve'.
-    CellIndex bcount;
+    StacksIndex bcount;
 
     for (uint i = 0; i < stacks[k].size(); ++i)
     {
     	if (isOdd(i))
     	{
-    		bcount = BranchCount(CellIndex(k,i));
+    		bcount = BranchCount(StacksIndex(k,i));
     		r.insert(r.end(), bcount.first, i);
     		// void insert ( iterator position, size_type n, const T& x );
     		// r := [op(r), seq(i,j=1..bcount[1])];
@@ -408,17 +502,19 @@ std::vector< std::pair<CellIndex, CellIndex> >
     		l.push_back(l.back()+1);
     }
 
-    std::vector< std::pair<CellIndex, CellIndex> > c;
+    assert(l.size() == r.size());
+
+    std::vector< std::pair<StacksIndex, StacksIndex> > c;
 
     for (uint i = 0, e = r.size(); i < e; ++i)
-        if (ContainersEqual(stacks[k-1][l[i]].signs, stacks[k][r[i]].signs))
-            c.push_back(make_pair(CellIndex(k-1,    l[i]),
-                                  CellIndex(k,      r[i]) ));
+        if (SignsEqual(stacks[k-1][l[i]].signs, stacks[k][r[i]].signs))
+            c.push_back(make_pair(StacksIndex(k-1,    l[i]),
+                                  StacksIndex(k,      r[i]) ));
 
     return c;
 }
 
-std::vector< std::pair<CellIndex, CellIndex> >
+std::vector< std::pair<StacksIndex, StacksIndex> >
     CAD::AdjacencyRight(const unsigned int k)
 {
     assert(Invariants());
@@ -428,13 +524,13 @@ std::vector< std::pair<CellIndex, CellIndex> >
     typedef unsigned int uint;
 
     std::vector<uint> l;
-    CellIndex bcount;
+    StacksIndex bcount;
 
     for (uint i = 0, e = stacks[k].size(); i < e; ++i)
     {
         if (isOdd(i))
         {
-            bcount = BranchCount(CellIndex(k, i));
+            bcount = BranchCount(StacksIndex(k, i));
             l.insert(l.end(), bcount.second, i);
         }
         else
@@ -454,12 +550,14 @@ std::vector< std::pair<CellIndex, CellIndex> >
             r.push_back(r.back()+1);
     }
 
-    std::vector< std::pair<CellIndex, CellIndex> > c;
+    assert(l.size() == r.size());
+
+    std::vector< std::pair<StacksIndex, StacksIndex> > c;
 
     for (uint i = 0, e = l.size(); i < e; ++i)
-        if (ContainersEqual(stacks[k][l[i]].signs, stacks[k+1][r[i]].signs))
-            c.push_back(make_pair(CellIndex(k,      l[i]),
-                                  CellIndex(k+1,    r[i]) ));
+        if (SignsEqual(stacks[k][l[i]].signs, stacks[k+1][r[i]].signs))
+            c.push_back(make_pair(StacksIndex(k,      l[i]),
+                                  StacksIndex(k+1,    r[i]) ));
 
     return c;
 }
@@ -467,10 +565,10 @@ std::vector< std::pair<CellIndex, CellIndex> >
 /*!
  * \todo Reserve the space for P upfront.
  */
-std::vector<PolynomialQ> CAD::Project(const std::vector<PolynomialQQ> & F)
+PolynomialQ::vector CAD::Project(const PolynomialQQ::vector & F)
 {
-    std::vector<PolynomialQQ> G = PolynomialQQ::IrreducibleFactors(F);
-    std::vector<PolynomialQ> P;
+    PolynomialQQ::vector G = PolynomialQQ::IrreducibleFactors(F);
+    PolynomialQ::vector P;
 
     for (PolynomialQQ::vector::size_type i = 0;        i < G.size()-1; i++)
         for (PolynomialQQ::vector::size_type j = i+1;  j < G.size();   j++)
@@ -482,13 +580,24 @@ std::vector<PolynomialQ> CAD::Project(const std::vector<PolynomialQQ> & F)
     return PolynomialQ::IrreducibleFactors(P);
 }
 
+//ProjectIrreducibles
+void CAD::addIrreducibleProjectionTo(PolynomialQ::vector & P,
+                                     const PolynomialQQ::vector & G)
+{
+    for (PolynomialQQ::vector::size_type i = 0;        i < G.size()-1; i++)
+        for (PolynomialQQ::vector::size_type j = i+1;  j < G.size();   j++)
+            P.push_back(PolynomialQQ::Resultant(G[i], G[j], 2));
+
+    for (PolynomialQQ::vector::size_type i = 0;        i < G.size(); i++)
+        P.push_back(PolynomialQQ::Resultant(G[i], G[i].getDerivative(2), 2));
+}
+
 /*!
  * \param roots Must be an ordered vector of Algebraic numbers.
  * \return A vector of Algebraic numbers with new numbers inserted between
  *		   and on each end of the numbers in roots.
  */
-std::vector<Algebraic>
-    CAD::SamplePoints(const std::vector<Algebraic> & roots)
+std::vector<Algebraic> CAD::SamplePoints(const std::vector<Algebraic> & roots)
 {
     std::vector<Algebraic> S;
     S.reserve(2*roots.size() + 1);
@@ -502,21 +611,20 @@ std::vector<Algebraic>
     // Assume roots.size() >= 1.
 
     GiNaC::numeric s = roots.front().lower() - 1;
-    //S.push_back(Algebraic(CAD::MakePoly(s), IntervalQ(s)));
-    S.push_back(Algebraic::MakeRational(s));
+    S.push_back(Algebraic::MakeWideRational(s));
 
     S.push_back(roots[0]);
 
     for (unsigned int i = 1; i < roots.size(); i++)
     {
     	s = (roots[i-1].upper() + roots[i].lower())/2;
-    	S.push_back(Algebraic::MakeRational(s));
+    	S.push_back(Algebraic::MakeWideRational(s));
 
     	S.push_back(roots[i]);
     }
 
     s = roots.back().upper() + 1;
-    S.push_back(Algebraic::MakeRational(s));
+    S.push_back(Algebraic::MakeWideRational(s));
 
 	return S;
 }
@@ -524,31 +632,60 @@ std::vector<Algebraic>
 /*!
  * \param F A vector of non-zero polynomials.
  */
-std::vector<Algebraic>
-    CAD::FindRoots2(const Algebraic & alpha,
-    				const std::vector<PolynomialQQ> & F)
+Algebraic::vector CAD::FindRoots2(const Algebraic & alpha,
+                                  const PolynomialQQ::vector & F)
 {
-    PolynomialQQ fs = accumulate(F.begin(),
-                                 F.end(),
-                                 PolynomialQQ((GiNaC::ex)1),
-                                 std::multiplies<PolynomialQQ>());
+    PolynomialQ r;
 
-    assert(!fs.isZero());
+    unsigned int n = 30;
+    //for (PolynomialQQ::vector::const_iterator
+    //     f = F.begin(), e = F.end(); f != e; ++f)
+    //    n += f->degree();
 
-    // make a conversion operator from PolyQ to PolyQQ for alpha.
-    // maybe PolynomialQ::getPolynomialQQ?
-    PolynomialQ r(PolynomialQQ::Resultant(PolynomialQQ(alpha.getPolynomial().getEx()),
-                                          fs,
-                                          1));
+    PolynomialQQ::vector irreds;    /**/ irreds.reserve(n);
+    PolynomialQ::vector vectorQ;    /**/ vectorQ.reserve(n);
+    Algebraic::vector   P;          /**/ P.reserve(n);
+    Algebraic::vector   R;          /**/ R.reserve(n);
 
-    Algebraic::vector P = PolynomialQ::FindRoots(*r.getIrreducibleFactors<PolynomialQ::vector>());
-    Algebraic::vector R;
-    R.reserve(P.size());
+    for (PolynomialQQ::vector::const_iterator
+         f = F.begin(), e = F.end(); f != e; ++f)
+    {
+        f->addIrreducibleFactorsTo(irreds);
 
-    for (Algebraic::vector::const_iterator p = P.begin(), e = P.end();
-         p != e; ++p)
-        if (fs.signAt(alpha, *p) == 0)
-            R.push_back(*p);
+        for (PolynomialQQ::vector::const_iterator
+             g = irreds.begin(), e2 = irreds.end(); g != e2; ++g)
+        {
+            r = PolynomialQQ::Resultant(PolynomialQQ(alpha.getEx()), *g, 1);
+            r.addIrreducibleFactorsTo(vectorQ);
+
+            for (PolynomialQ::vector::const_iterator
+                 i = vectorQ.begin(), e3 = vectorQ.end(); i != e3; ++i)
+                i->addRootsOfIrreducibleTo(P);
+
+            tmp::SortUnique(P);
+
+            for (Algebraic::vector::const_iterator
+                 beta = P.begin(), e = P.end(); beta != e; ++beta)
+            {
+                for (PolynomialQQ::vector::const_iterator
+                     g = F.begin(), e = F.end(); g != e; ++g)
+                {
+                    if (g->signAt(alpha, *beta) == 0)
+                    {
+                        R.push_back(*beta);
+                        break;
+                    }
+                }
+            }
+
+            vectorQ.clear();
+            P.clear();
+        }
+
+        irreds.clear();
+    }
+
+    tmp::SortUnique(R);
 
     return R;
 }

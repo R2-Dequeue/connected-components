@@ -6,8 +6,8 @@
 #ifndef __POLYNOMIALQQ__
 #define __POLYNOMIALQQ__
 
-#include <string>
 #include <cassert>
+#include <string>
 #include <vector>
 
 #include <boost/tuple/tuple.hpp>
@@ -27,12 +27,14 @@ private:
     static const GiNaC::symbol & var2;
     GiNaC::ex polynomial;
 
+    struct less;
+
 public:
 
-    typedef std::vector<PolynomialQQ>   vector;
-    typedef std::set<PolynomialQQ>      set;
-    typedef std::list<PolynomialQQ>     list;
-    typedef unsigned int                size_type;
+    typedef std::vector<PolynomialQQ>       vector;
+    typedef std::set<PolynomialQQ,less>     set;
+    typedef std::list<PolynomialQQ>         list;
+    typedef unsigned int                    size_type;
 
     PolynomialQQ();//!< The default constructor.
     PolynomialQQ(const std::string & s);
@@ -48,6 +50,8 @@ public:
 
     const GiNaC::ex & getEx() const;
     PolynomialQQ getDerivative(unsigned int variable) const;
+
+    void switchVariables();
 
     PolynomialQ subx(const GiNaC::numeric & a) const;
     PolynomialQ suby(const GiNaC::numeric & b) const;
@@ -77,8 +81,7 @@ public:
     PolynomialQQ & operator-=(const PolynomialQQ & rhs);
 	PolynomialQQ & operator*=(const PolynomialQQ & rhs);
 
-	void out();
-	std::string toString();
+	std::string getString() const;
 
     /*!
      * \brief Helper method for internal 'assert' checks.
@@ -96,8 +99,8 @@ public:
     static boost::tuple<Algebraic, PolynomialQ, PolynomialQ>
         Simple2(const Algebraic & alpha, const Algebraic & beta);
 
-    static GiNaC::ex gcdex(GiNaC::ex f,
-                    GiNaC::ex g,
+    static GiNaC::ex gcdex(const GiNaC::ex & f,
+                    const GiNaC::ex & g,
                     const GiNaC::symbol & var,
                     GiNaC::ex & c1,
                     GiNaC::ex & c2);
@@ -226,6 +229,11 @@ inline PolynomialQQ PolynomialQQ::getDerivative(unsigned int variable) const
     temp.differentiate(variable);
 
     return temp;
+}
+
+inline void PolynomialQQ::switchVariables()
+{
+    polynomial.subs(GiNaC::lst(var1 == var2, var2 == var1));
 }
 
 inline PolynomialQ PolynomialQQ::subx(const GiNaC::numeric & a) const
@@ -490,5 +498,15 @@ inline std::ostream & operator<<(std::ostream & output, const PolynomialQQ & p)
 
     return output;
 }
+
+struct PolynomialQQ::less
+    : public std::binary_function<PolynomialQQ, PolynomialQQ, bool>
+{
+    bool operator()(const PolynomialQQ & lhs, const PolynomialQQ & rhs)
+    {
+        GiNaC::ex_is_less comp;
+        return (comp(lhs.polynomial, rhs.polynomial) < 0);
+    }
+};
 
 #endif // __POLYNOMIALQQ__

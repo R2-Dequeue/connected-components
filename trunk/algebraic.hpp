@@ -6,6 +6,7 @@
 #ifndef __ALGEBRAIC__
 #define __ALGEBRAIC__
 
+#include <cassert>
 #include <vector>
 #include <set>
 #include <list>
@@ -86,6 +87,13 @@ public:
 
     //! Shrinks the internal intervals of a & b so that they don't intersect.
     static void SeparateIntervals(Algebraic & a, Algebraic & b);
+    static void SeparateIntervals(Algebraic & a, Algebraic & b,
+                                  const GiNaC::numeric & delta);
+    template <typename Container>
+    static void SeparateIntervals(Container & alphas);
+    template <typename Container>
+    static void SeparateIntervals(Container & alphas,
+                                  const GiNaC::numeric & delta);
     //! Returns an object with a degree 1 polynomial and interval [a, a].
     static Algebraic MakeRational(const GiNaC::numeric & a);
     //! Returns an object with a degree 1 polynomial and interval [a-delta, a+delta].
@@ -101,9 +109,59 @@ public:
 
 	friend class PolynomialQ;
 	friend struct ModifyingSetCompare;
+	friend class AlgebraicSorter;
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
+inline bool operator==(const Algebraic & alpha, const Algebraic & beta);
+inline bool operator!=(const Algebraic & alpha, const Algebraic & beta);
+inline bool operator<(const Algebraic & alpha, const Algebraic & beta);
+inline bool operator<=(const Algebraic & alpha, const Algebraic & beta);
+inline bool operator>(const Algebraic & alpha, const Algebraic & beta);
+inline bool operator>=(const Algebraic & alpha, const Algebraic & beta);
+inline std::ostream & operator<<(std::ostream & output, const Algebraic & alpha);
+
+struct ModifyingSetCompare
+{
+bool operator()(Algebraic & lhs, Algebraic & rhs)
+{
+    assert(lhs.Invariants());
+    assert(rhs.Invariants());
+
+    if (lhs.polynomial != rhs.polynomial)
+        while (true)
+        {
+            if (lhs.rootinterval.lower() > rhs.rootinterval.upper())
+                return false;
+            if (lhs.rootinterval.upper() < rhs.rootinterval.lower())
+                return true;
+
+            lhs.tightenInterval();
+            rhs.tightenInterval();
+        }
+    else
+        while (true)
+        {
+            if (lhs.rootinterval.lower() >= rhs.rootinterval.lower() &&
+                lhs.rootinterval.upper() <= rhs.rootinterval.upper())
+                return false;
+            if (lhs.rootinterval.lower() > rhs.rootinterval.upper())
+                return false;
+            if (lhs.rootinterval.upper() < rhs.rootinterval.lower())
+                return true;
+
+            lhs.tightenInterval();
+        }
+
+    assert(false);
+    return true;
+}
 };
 
 #define __DELTA ( GiNaC::numeric(1, 64) )
+
+#include "polynomialq.hpp"
 
 inline Algebraic::Algebraic()
     : polynomial(GiNaC::ex(PolynomialQ::GetVar())),
@@ -245,6 +303,9 @@ inline int Algebraic::sgn() const
     return alpha.lower().csgn();
 }
 
+/*!
+ * \todo Fix polynomial multiplication.
+ */
 inline Algebraic & Algebraic::takeAbs()
 {
     if (this->isZero())
@@ -256,9 +317,14 @@ inline Algebraic & Algebraic::takeAbs()
     if (this->lower().csgn() >= 0)
         return *this;
 
-    polynomial.negate();
     const GiNaC::numeric a = this->lower(), b = this->upper();
+    polynomial.negate();
     rootinterval.assign(-b, -a);
+
+    unsigned int d = polynomial.degree();
+    if ((d & 1) != 0)
+        //this->polynomial = this->polynomial * GiNaC::numeric(-1);
+        polynomial.makeMonic();
 
     return *this;
 }
@@ -299,7 +365,7 @@ inline GiNaC::numeric Algebraic::Approximate() const
 
     Algebraic temp(*this);
 
-    while (temp.upper() - temp.lower() > GiNaC::numeric(1,1000))
+    while (temp.upper() - temp.lower() > GiNaC::numeric(1,10000))
         temp.tightenInterval();
 /*
     GiNaC::numeric value = GiNaC::fsolve(polynomial.getEx(),
@@ -308,7 +374,7 @@ inline GiNaC::numeric Algebraic::Approximate() const
                                          temp.upper()); //rootinterval.upper());
 
     return value;*/
-    return temp.lower();
+    return (temp.lower() + temp.upper()) / 2;
 }
 
 inline int Algebraic::roundToInt()
@@ -385,11 +451,86 @@ inline void Algebraic::SeparateIntervals(Algebraic & a, Algebraic & b)
     assert(a.Invariants());
     assert(b.Invariants());
 
-    while ( !(a.upper() < b.lower() || b.upper() < a.lower()) )
-    {
+    if (a != b)
+        while ( !(a.upper() < b.lower() || b.upper() < a.lower()) )
+        {
+            a.tightenInterval();
+            b.tightenInterval();
+        }
+}
+
+inline void Algebraic::SeparateIntervals(Algebraic & a, Algebraic & b,
+                                         const GiNaC::numeric & delta)
+{
+    assert(a.Invariants());
+    assert(b.Invariants());
+
+    while (a.upper() - a.lower() > delta)
         a.tightenInterval();
+    while (b.upper() - b.lower() > delta)
         b.tightenInterval();
+
+    if (a != b)
+    {
+        while ( !(a.upper() < b.lower() || b.upper() < a.lower()) )
+        {
+            a.tightenInterval();
+            b.tightenInterval();
+        }
     }
+}
+
+/*!
+ * \param alphas A container of SORTED Algebraic objects.
+ */
+template <typename Container>
+void Algebraic::SeparateIntervals(Container & alphas)
+{
+    if (alphas.size() <= 1)
+        return;
+
+    typename Container::iterator alpha = alphas.begin(),
+                                 endAlpha = alphas.end(),
+                                 nextAlpha = alphas.begin();
+    ++nextAlpha;
+
+    while (nextAlpha != endAlpha)
+    {
+        Algebraic::SeparateIntervals(*alpha, *nextAlpha);
+
+        ++alpha;
+        ++nextAlpha;
+    }
+}
+
+/*!
+ * \param alphas A container of SORTED Algebraic objects.
+ */
+template <typename Container>
+void Algebraic::SeparateIntervals(Container & alphas,
+                                  const GiNaC::numeric & delta)
+{
+    if (alphas.size() <= 1)
+        return;
+
+    typename Container::iterator alpha = alphas.begin(),
+                                 endAlpha = alphas.end(),
+                                 nextAlpha = alphas.begin();
+    ++nextAlpha;
+
+    while (nextAlpha != endAlpha)
+    {
+        Algebraic::SeparateIntervals(*alpha, *nextAlpha);
+
+        while (alpha->upper() - alpha->lower() > delta)
+            alpha->tightenInterval();
+
+        ++alpha;
+        ++nextAlpha;
+    }
+
+    while (alpha->upper() - alpha->lower() > delta)
+        alpha->tightenInterval();
 }
 
 inline Algebraic Algebraic::MakeRational(const GiNaC::numeric & a)
