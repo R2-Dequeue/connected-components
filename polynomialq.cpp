@@ -11,6 +11,7 @@
 #include <functional>
 #include <stdexcept>
 #include <memory>
+#include <sstream>
 
 #include <boost/foreach.hpp>
 
@@ -313,26 +314,25 @@ unsigned int PolynomialQ::sturm(const std::vector<PolynomialQ> & F,
 /*!
  * \detail a < b.
  */
-unsigned int
-    PolynomialQ::sturm(const std::vector<PolynomialQ> & F,
-                       boost::tuple<GiNaC::numeric, bool, unsigned int, bool> & a,
-                       boost::tuple<GiNaC::numeric, bool, unsigned int, bool> & b)
+unsigned int PolynomialQ::sturm(const std::vector<PolynomialQ> & F,
+                                sturmNumeric & a,
+                                sturmNumeric & b)
 {
-    assert(a.get<0>() < b.get<0>());
+    assert(a.number < b.number);
 
-    if (a.get<1>() && b.get<1>())
-        return (a.get<2>() - b.get<2>());
+    if (a.isDataValid && b.isDataValid)
+        return (a.signChanges - b.signChanges);
 
     if (F.size() == 1)
         return 0;
 
-    if (!a.get<1>())
+    if (!a.isDataValid)
     {
-        GiNaC::numeric f2 = F[0].eval(a.get<0>());
-        GiNaC::numeric fa = F[1].eval(a.get<0>());
+        GiNaC::numeric f2 = F[0].eval(a.number);
+        GiNaC::numeric fa = F[1].eval(a.number);
         unsigned int   va = 0;
 
-        a.get<3>() = f2.is_zero();
+        a.isRoot = f2.is_zero();
 
         if (f2 != 0) // if == 0 then do nothing
         {
@@ -345,7 +345,7 @@ unsigned int
 
         for (unsigned int i = 2; i < F.size(); ++i)
         {
-            GiNaC::numeric alpha = F[i].eval(a.get<0>());
+            GiNaC::numeric alpha = F[i].eval(a.number);
 
             if (alpha != 0)
             {
@@ -356,17 +356,17 @@ unsigned int
             }
         }
 
-        a.get<1>() = true;
-        a.get<2>() = va;
+        a.isDataValid = true;
+        a.signChanges = va;
     }
 
-    if (!b.get<1>())
+    if (!b.isDataValid)
     {
-        GiNaC::numeric g2 = F[0].eval(b.get<0>());
-        GiNaC::numeric gb = F[1].eval(b.get<0>());
+        GiNaC::numeric g2 = F[0].eval(b.number);
+        GiNaC::numeric gb = F[1].eval(b.number);
         unsigned int   vb = 0;
 
-        b.get<3>() = g2.is_zero();
+        b.isRoot = g2.is_zero();
 
         if (g2 != 0) // if == 0 then do nothing
         {
@@ -379,7 +379,7 @@ unsigned int
 
         for (unsigned int i = 2; i < F.size(); ++i)
         {
-            GiNaC::numeric beta  = F[i].eval(b.get<0>());
+            GiNaC::numeric beta  = F[i].eval(b.number);
 
             if (beta != 0)
             {
@@ -390,13 +390,13 @@ unsigned int
             }
         }
 
-        b.get<1>() = true;
-        b.get<2>() = vb;
+        b.isDataValid = true;
+        b.signChanges = vb;
     }
 
-    assert(int(a.get<2>()) - int(b.get<2>()) >= 0);
+    assert(int(a.signChanges) - int(b.signChanges) >= 0);
 
-    return (a.get<2>() - b.get<2>());
+    return (a.signChanges - b.signChanges);
 }
 
 /*!
@@ -406,22 +406,42 @@ unsigned int
  * \return Each factor appears only once (multiplicities and common roots are
  *		   ignored). Each factor is monic, irreducible, and not a constant.
  */
-std::vector<PolynomialQ>
-    PolynomialQ::IrreducibleFactors(const std::vector<PolynomialQ> & F)
+PolynomialQ::vector
+    PolynomialQ::IrreducibleFactors(const PolynomialQ::vector & F)
 {
-    // Probably faster to get factors separately and merge.
-    PolynomialQ fp = accumulate(F.begin(),
-                                F.end(),
-                                PolynomialQ((GiNaC::ex)1),
-                                std::multiplies<PolynomialQ>());
-    // implement PolynomialQ::mul(set)?
+    // remove '0' polynomials?
+    //assert(!fp.isZero());
 
-    assert(!fp.isZero());
+    /*PolynomialQ::vector factors;
+    BOOST_FOREACH(const PolynomialQ & f, F)
+        f.addIrreducibleFactorsTo(factors);*/
 
-    PolynomialQ::vector temp;
-    fp.addIrreducibleFactorsTo(temp);
+    /*PolynomialQ::set factors;
 
-    return temp;
+    for (PolynomialQ::vector::const_iterator i = F.begin(), e = F.end();
+         i != e; ++i)
+        i->addIrreducibleFactorsTo(factors);
+
+    PolynomialQ::vector temp(factors.begin(), factors.end());*/
+
+    PolynomialQ::vector factors, temp;
+    factors.reserve(F.size());
+    temp.reserve(F.size());
+
+    for (PolynomialQ::vector::const_iterator f = F.begin(), e1 = F.end();
+         f != e1; ++f)
+    {
+        f->addIrreducibleFactorsTo(temp);
+
+        for (PolynomialQ::vector::iterator g = temp.begin(), e2 = temp.end();
+             g != e2; ++g)
+            if (find(factors.begin(), factors.end(), *g) == factors.end())
+                factors.push_back(*g);
+
+        temp.clear();
+    }
+
+    return factors;
 }
 
 /*!
@@ -618,12 +638,159 @@ PolynomialQ PolynomialQ::ParseString(const std::string & s) const
     return p;
 }
 
-void PolynomialQ::out()
+int PolynomialQ::NumericToInt(const GiNaC::numeric & a) const
 {
-    std::cout << *this;
+    assert(Invariants());
+
+    // Round to nearest
+    // Round half away from zero for tie-breaking
+
+    assert(a.is_rational());
+
+    const GiNaC::numeric n = a.numer(), d = a.denom();
+
+    assert(n.is_integer());
+    assert(d.is_pos_integer());
+    assert(GiNaC::gcd(n, d) == 1);
+
+    GiNaC::numeric rem;
+    const GiNaC::numeric quo = GiNaC::iquo(n, d, rem);
+
+    assert(quo.is_integer());//(quo.is_nonneg_integer());
+    assert(rem.is_integer());
+    assert(rem.is_zero() || rem.csgn() == n.csgn());
+
+    if (a.is_positive())
+    {
+        if (rem < d/2)
+            return quo.to_int();
+        else
+            return (quo.to_int()+1);
+    }
+
+    if (rem <= (-d)/2)
+        return (quo.to_int()-1);
+    else
+        return (quo.to_int());
 }
-#include <sstream>
-std::string PolynomialQ::toString()
+
+int PolynomialQ::roundToInt(const std::vector<PolynomialQ> & F,
+                            sturmNumeric & L,
+                            sturmNumeric & U) const
+{
+    assert(Invariants());
+
+    const GiNaC::numeric delta(1, 10);
+    sturmNumeric M;
+    unsigned int roots;
+
+    // Assume one and only one root in [L, U].
+
+    while (U.number - L.number > delta)
+    {
+        M.assignMedian(L, U);
+        roots = this->sturm(F, L, M);
+
+        if (M.isRoot)
+            return PolynomialQ::NumericToInt(M.number);
+        else if (roots == 0)
+            L = M;
+        else if (roots == 1)
+            U = M;
+    }
+
+    const GiNaC::numeric a = (L.number + U.number) / 2;
+
+    return PolynomialQ::NumericToInt(a);
+}
+
+std::vector<int> & PolynomialQ::addRoundedRootsTo(std::vector<int> & roots) const
+{
+    const unsigned int d = this->degree();
+
+    if (d <= 0)
+        return roots;
+    else if (d == 1)
+    {
+        roots.push_back(PolynomialQ::NumericToInt(-(this->getCoeff(0)) /
+                                                  this->getCoeff(1)));
+        return roots;
+    }
+
+    PolynomialQ::vector F;
+    F.reserve(d + 2);
+    this->sturmseq(F);
+
+    GiNaC::numeric R(0);
+    for (unsigned int i = 0; i < d; ++i)
+        if (GiNaC::abs(this->getCoeff(i)) > R)
+            R = GiNaC::abs(this->getCoeff(i));
+    R /= GiNaC::abs(this->getCoeff(d));
+    ++R;
+
+    // All real roots of *this are in [-R, R].
+
+    sturmNumeric L(-R), U(R), L1, U1, NU;
+    unsigned int numroots = PolynomialQ::sturm(F, L, U);
+    unsigned int numroots1;
+
+    while (true)
+    {
+        if (numroots == 0)
+            break;
+        else if (numroots == 1)
+        {
+            tmp::PushBack(roots, this->roundToInt(F, L, U));
+            break;
+        }
+
+        L1 = L;
+        U1 = U;
+
+        while (true)
+        {
+            NU.assignMedian(L1, U1);
+            numroots1 = PolynomialQ::sturm(F,L1,NU);
+
+            if (NU.isRoot)
+            {
+                tmp::PushBack(roots, PolynomialQ::NumericToInt(NU.number));
+                --numroots1;
+                if (numroots1 == 0)
+                    break;
+            } // I think I might get repeats as-is.
+
+            if (numroots1 < numroots)
+            {
+                if (numroots1 == 1)
+                {
+                    U1 = NU;
+                    tmp::PushBack(roots, this->roundToInt(F, L1, NU));
+                    break;
+                }
+                else if (numroots1 == 0)
+                    L1 = NU;
+                else
+                    U1 = NU;
+            }
+            else
+                U1 = NU;
+        }
+
+        L = U1;
+        numroots = PolynomialQ::sturm(F, L, U);
+
+        if (NU.isRoot)
+        {
+            tmp::PushBack(roots, PolynomialQ::NumericToInt(NU.number));
+            --numroots;
+        }
+    }
+
+    return roots;
+}
+
+std::string PolynomialQ::getString() const
 {
     std::stringstream s;
     s << *this;

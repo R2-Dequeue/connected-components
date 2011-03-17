@@ -16,10 +16,9 @@
 
 #include <ginac/ginac.h>
 
-// //! This type represents the interval in class Algebraic.
-//typedef boost::numeric::interval<GiNaC::numeric> IntervalQ;
-
 #include "intervalq.hpp"
+#include "sturmnumeric.hpp"
+#include "templatehelp.hpp"
 
 class Algebraic; // To allow circular dependancy.
 
@@ -39,12 +38,14 @@ private:
     static const GiNaC::symbol & variable;  //!< The variable of the polynomial.
     GiNaC::ex polynomial;                   //!< The internal representation of the polynomial.
 
+    struct less;
+
 public:
 
-    typedef std::vector<PolynomialQ> vector;
-    typedef std::set<PolynomialQ>    set;
-    typedef std::list<PolynomialQ>   list;
-    typedef unsigned int size_type;
+    typedef std::vector<PolynomialQ>    vector;
+    typedef std::set<PolynomialQ,less>  set;
+    typedef std::list<PolynomialQ>      list;
+    typedef unsigned int                size_type;
 
 	PolynomialQ(); //!< The default constructor.
 	PolynomialQ(const std::string & s); //!< Parse a polynomial from a string.
@@ -78,6 +79,7 @@ public:
     template <class T> T & addIrreducibleFactorsTo(T & factors) const;
     template <class T> std::auto_ptr<T> getRoots() const;
     template <class T> T & addRootsTo(T & roots) const;
+    std::vector<int> & addRoundedRootsTo(std::vector<int> & roots) const;
 
 	//! Calculates the sign of f(a).
     int signAt(const Algebraic & a) const;
@@ -91,8 +93,8 @@ public:
                               const GiNaC::numeric & a,
                               const GiNaC::numeric & b);
     static unsigned int sturm(const std::vector<PolynomialQ> & F,
-                       boost::tuple<GiNaC::numeric, bool, unsigned int, bool> & a,
-                       boost::tuple<GiNaC::numeric, bool, unsigned int, bool> & b);
+                              sturmNumeric & a,
+                              sturmNumeric & b);
 	static std::vector<PolynomialQ>
         IrreducibleFactors(const std::vector<PolynomialQ> & F);
     static GiNaC::numeric
@@ -105,8 +107,7 @@ public:
     PolynomialQ & operator/=(const PolynomialQ & rhs);
     PolynomialQ & operator%=(const PolynomialQ & rhs);
 
-    void out();
-    std::string toString();
+    std::string getString() const;
 
     static void TestClass();
 
@@ -128,9 +129,11 @@ public:
                             const GiNaC::ex expected,
                             unsigned int & count);
     PolynomialQ ParseString(const std::string & s) const;
+    int NumericToInt(const GiNaC::numeric & a) const;
+    int roundToInt(const std::vector<PolynomialQ> & F,
+                   sturmNumeric & L,
+                   sturmNumeric & U) const;
 };
-
-#include "algebraic.hpp"
 
 //PolynomialQ SubResultant(const PolynomialQ & f,
 //                         const PolynomialQ & g,
@@ -149,6 +152,8 @@ PolynomialQ operator*(const GiNaC::numeric & num, const PolynomialQ & lhs);
 PolynomialQ operator/(const PolynomialQ & lhs, const GiNaC::numeric & num);
 PolynomialQ operator/(const GiNaC::numeric & num, const PolynomialQ & lhs);
 std::ostream & operator<<(std::ostream & output, const PolynomialQ & p);
+
+#include "algebraic.hpp"
 
 inline PolynomialQ::PolynomialQ() : polynomial(0) {}
 
@@ -312,7 +317,8 @@ inline PolynomialQ & PolynomialQ::makeMonic()
 
     if (!this->isZero()) // ==> Leading coefficient is non-zero.
     {
-    	polynomial = (polynomial / polynomial.lcoeff(variable)).expand();
+    	//polynomial = (polynomial / polynomial.lcoeff(variable)).expand();
+    	polynomial /= polynomial.lcoeff(variable);
 
     	assert(Invariants());
     }
@@ -388,17 +394,6 @@ inline std::auto_ptr<PolynomialQ::vector> PolynomialQ::sturmseq() const
 // this->getIrreducibleFactors();
 // Class::IrreducibleFactors();
 
-template <typename T>
-inline void ReserveHelper(T & container, unsigned int n)
-{}
-
-template <>
-inline void ReserveHelper< std::vector<Algebraic> >
-    (std::vector<Algebraic> & container, unsigned int n)
-{
-    container.reserve(n);
-}
-
 /*!
  * \detail Returns the factors of the polynomial.
  * \return Each factor appears only once (multiplicities are ignored). Each
@@ -409,19 +404,14 @@ inline std::auto_ptr<T> PolynomialQ::getIrreducibleFactors() const
 {
     std::auto_ptr<T> factors(new T);
 
-    ReserveHelper(*factors, this->degree());
+    tmp::ReserveHelper(*factors, this->degree());
 
     this->addIrreducibleFactorsTo(*factors);
 
     return factors;
 }
 
-template <typename T1, typename T2>
-inline void PushBack(T1 & container, const T2 & element)
-{
-    container.insert(container.end(), element);
-}
-
+namespace tmp {
 template <class T>
 inline void PushBackMonic(T & factors, const GiNaC::ex & p)
 {
@@ -432,23 +422,32 @@ inline void PushBackMonic(T & factors, const GiNaC::ex & p)
     else
         factors.insert(factors.end(), temp.getMonic());
 }
+}
 
 template <class T>
 T & PolynomialQ::addIrreducibleFactorsTo(T & factors) const
 {
     assert(Invariants());
 
-    GiNaC::ex p = GiNaC::factor(this->polynomial);
+    GiNaC::ex p;// = GiNaC::factor(this->polynomial);
+
+    if (this->isConstant())
+        return factors;
+    else if (this->isMonic())
+        p = GiNaC::factor(this->polynomial);
+    else
+        p = GiNaC::factor(this->polynomial /
+                          this->polynomial.lcoeff(this->variable));
 
     if (GiNaC::is_a<GiNaC::power>(p))
     {
-        PushBackMonic(factors, p.op(0));
+        tmp::PushBackMonic(factors, p.op(0));
         return factors;
     }
     else if (!GiNaC::is_a<GiNaC::mul>(p))
     {
         if (!GiNaC::is_a<GiNaC::numeric>(p))
-            PushBackMonic(factors, p);
+            tmp::PushBackMonic(factors, p);
         return factors;
     }
 
@@ -457,9 +456,9 @@ T & PolynomialQ::addIrreducibleFactorsTo(T & factors) const
         if (GiNaC::is_a<GiNaC::numeric>(*i))
             continue;
         else if (GiNaC::is_a<GiNaC::power>(*i))
-            PushBackMonic(factors, (*i).op(0));
+            tmp::PushBackMonic(factors, (*i).op(0));
         else
-            PushBackMonic(factors, *i);
+            tmp::PushBackMonic(factors, *i);
 	}
 
     return factors;
@@ -488,7 +487,7 @@ template <class T> T & PolynomialQ::addRootsTo(T & roots) const
             const GiNaC::numeric root = -(f->getCoeff(0));
             const Algebraic alpha(PolynomialQ::GetVar() - root,
                                   IntervalQ(root - delta, root + delta));
-            PushBack(roots, alpha);
+            tmp::PushBack(roots, alpha);
         }/*
         else if (d == 2)
         {
@@ -506,13 +505,13 @@ inline std::auto_ptr<T> PolynomialQ::getRoots() const
 {
     std::auto_ptr<T> ptr(new T);
 
-    ReserveHelper(*ptr, this->degree());
+    tmp::ReserveHelper(*ptr, this->degree());
 
     this->addRootsTo(*ptr);
 
     return ptr;
 }
-/*
+
 template <class T> T & PolynomialQ::addRootsOfIrreducibleTo(T & roots) const
 {
     const unsigned int d = this->degree();
@@ -524,18 +523,16 @@ template <class T> T & PolynomialQ::addRootsOfIrreducibleTo(T & roots) const
     F.reserve(d + 2);
     this->sturmseq(F);
 
-    GiNaC::numeric R = 0;
-
+    GiNaC::numeric R(0);
     for (unsigned int i = 0; i < d; ++i)
         if (GiNaC::abs(this->getCoeff(i)) > R)
             R = GiNaC::abs(this->getCoeff(i));
-
     R /= GiNaC::abs(this->getCoeff(d));
     ++R;
 
     // All real roots of *this are in [-R, R].
 
-    GiNaC::numeric L = -R, U = R, L1, U1, NU;
+    sturmNumeric L(-R), U(R), L1, U1, NU;
     unsigned int numroots = PolynomialQ::sturm(F, L, U);
     unsigned int numroots1;
 
@@ -546,7 +543,7 @@ template <class T> T & PolynomialQ::addRootsOfIrreducibleTo(T & roots) const
     {
         if (numroots == 1)
         {
-            PushBack(roots, Algebraic(*this, IntervalQ(L, U)));
+            tmp::PushBack(roots, Algebraic(*this, IntervalQ(L.number, U.number)));
             break;
         }
 
@@ -555,14 +552,16 @@ template <class T> T & PolynomialQ::addRootsOfIrreducibleTo(T & roots) const
 
         while (true)
         {
-            NU = (L1+U1)/2;
+            NU.number = (L1.number + U1.number) / 2;
+            NU.isDataValid = false;
             numroots1 = PolynomialQ::sturm(F,L1,NU);
 
             if (numroots1 < numroots)
             {
                 if (numroots1 == 1)
                 {
-                    PushBack(roots, Algebraic(*this, IntervalQ(L1, NU)));
+                    tmp::PushBack(roots, Algebraic(*this, IntervalQ(L1.number,
+                                                               NU.number)));
                     U1 = NU;
                     break;
                 }
@@ -581,83 +580,7 @@ template <class T> T & PolynomialQ::addRootsOfIrreducibleTo(T & roots) const
 
     return roots;
 }
-*/
-template <class T> T & PolynomialQ::addRootsOfIrreducibleTo(T & roots) const
-{
-    const unsigned int d = this->degree();
 
-    if (d <= 0)
-        return roots;
-
-    PolynomialQ::vector F;
-    F.reserve(d + 2);
-    this->sturmseq(F);
-
-    GiNaC::numeric R = 0;
-
-    for (unsigned int i = 0; i < d; ++i)
-        if (GiNaC::abs(this->getCoeff(i)) > R)
-            R = GiNaC::abs(this->getCoeff(i));
-
-    R /= GiNaC::abs(this->getCoeff(d));
-    ++R;
-
-    // All real roots of *this are in [-R, R].
-
-    // < number, isValid, # sign changes, isRoot >
-    typedef boost::tuple<GiNaC::numeric, bool, unsigned int, bool> aPoint;
-
-    //GiNaC::numeric L = -R, U = R, L1, U1, NU;
-    aPoint L = boost::make_tuple(-R, false, 0, false),
-           U = boost::make_tuple(R, false, 0, false), L1, U1, NU;
-    unsigned int numroots = PolynomialQ::sturm(F, L, U);
-    unsigned int numroots1;
-
-    if (numroots == 0)
-        return roots;
-
-    while (true)
-    {
-        if (numroots == 1)
-        {
-            PushBack(roots, Algebraic(*this, IntervalQ(L.get<0>(),
-                                                       U.get<0>())));
-            break;
-        }
-
-        L1 = L;
-        U1 = U;
-
-        while (true)
-        {
-            NU.get<0>() = (L1.get<0>()+U1.get<0>()) / 2;
-            NU.get<1>() = false;
-            numroots1 = PolynomialQ::sturm(F,L1,NU);
-
-            if (numroots1 < numroots)
-            {
-                if (numroots1 == 1)
-                {
-                    PushBack(roots, Algebraic(*this, IntervalQ(L1.get<0>(),
-                                                               NU.get<0>())));
-                    U1 = NU;
-                    break;
-                }
-                else if (numroots1 == 0)
-                    L1 = NU;
-                else
-                    U1 = NU;
-            }
-            else
-                U1 = NU;
-        }
-
-        L = U1;
-        numroots = PolynomialQ::sturm(F, L, U);
-    }
-
-    return roots;
-}
 /*!
  * \detail *this must be irreducible.
  */
@@ -666,7 +589,7 @@ std::auto_ptr<T> PolynomialQ::getRootsOfIrreducible() const
 {
     std::auto_ptr<T> ptr(new T);
 
-    ReserveHelper(*ptr, this->degree());
+    tmp::ReserveHelper(*ptr, this->degree());
 
     this->addRootsOfIrreducibleTo(*ptr);
 
@@ -846,5 +769,15 @@ inline std::ostream & operator<<(std::ostream & output, const PolynomialQ & p)
 
     return output;
 }
+
+struct PolynomialQ::less
+    : public std::binary_function<PolynomialQ, PolynomialQ, bool>
+{
+    bool operator()(const PolynomialQ & lhs, const PolynomialQ & rhs)
+    {
+        GiNaC::ex_is_less comp;
+        return (comp(lhs.polynomial, rhs.polynomial) < 0);
+    }
+};
 
 #endif // __POLYNOMIALQ__

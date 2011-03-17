@@ -6,6 +6,7 @@
 #ifndef __INTERVALQ__
 #define __INTERVALQ__
 
+#include <cassert>
 #include <algorithm>
 #include <functional>
 
@@ -112,15 +113,6 @@ inline IntervalQ & IntervalQ::operator+=(const IntervalQ & rhs)
     return *this;
 }
 
-template <typename T>
-struct DerefLess : public std::binary_function<const T *, const T *, bool>
-{
-    inline bool operator()(const T * lhs, const T * rhs)
-    {
-        return (*lhs < *rhs);
-    }
-};
-
 /*!
  * \detail Works correctly in cases such as: I *= I.
  */
@@ -129,19 +121,13 @@ inline IntervalQ & IntervalQ::operator*=(const IntervalQ & rhs)
     assert(Invariants() && rhs.Invariants());
 
     boost::array<GiNaC::numeric, 4> a;
-    a[0] = l*rhs.l;
-    a[1] = l*rhs.u;
-    a[2] = u*rhs.l;
-    a[3] = u*rhs.u;
-    boost::array<GiNaC::numeric *, 4> b;
-    b[0] = &(a[0]);
-    b[1] = &(a[1]);
-    b[2] = &(a[2]);
-    b[3] = &(a[3]);
+    a[0] = this->l*rhs.l;
+    a[1] = this->l*rhs.u;
+    a[2] = this->u*rhs.l;
+    a[3] = this->u*rhs.u;
 
-    std::sort(b.begin(), b.end(), DerefLess<GiNaC::numeric>());
-    l = *(b[0]);
-    u = *(b[3]);
+    l = *std::min_element(a.begin(), a.end());
+    u = *std::max_element(a.begin(), a.end());
 
     assert(Invariants());
 
