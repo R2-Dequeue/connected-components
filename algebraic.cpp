@@ -22,7 +22,7 @@ int Algebraic::compare(const Algebraic & B) const
 
     Algebraic a(*this), b(B);
 
-    if (a.polynomial != b.polynomial) // a.compare(b) != 0, or !a.equalTo(b)
+    if (a.polynomial != b.polynomial)
     {
         while (true)
         {
@@ -58,7 +58,10 @@ int Algebraic::compare(const Algebraic & B) const
     return -41;
 }
 
-Algebraic & Algebraic::tightenInterval()
+/*!
+ * \brief Shrinks the interval around the root.
+ */
+void Algebraic::tightenInterval() const
 {
     assert(Invariants());
 
@@ -78,8 +81,6 @@ Algebraic & Algebraic::tightenInterval()
         else
             rootinterval.assignUpper(m);
     }
-
-    return *this;
 }
 
 /*!
@@ -114,6 +115,9 @@ bool Algebraic::Invariants() const
 
     if (!polynomial.isMonic())
     	return false;
+
+    if (!rootinterval.Invariants())
+        return false;
 
     return true;
 }

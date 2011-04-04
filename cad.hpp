@@ -49,6 +49,7 @@ private:
     public:
         Sample(const Algebraic & b, const std::vector<char> & s)
             : y(b), signs(s) {};
+        Sample(unsigned int i) : signs(i) {}
 
         Algebraic y;
         /*!
@@ -143,6 +144,10 @@ private:
 	//! Returns the roots of (f1*...*fn)(alpha, y).
     static Algebraic::vector
         FindRoots2(const Algebraic & alpha, const PolynomialQQ::vector & F);
+    template <typename T>
+    static void addRoots2To(T & roots,
+                            const Algebraic & alpha,
+                            const PolynomialQQ::vector & F);
 
 	//! Internal helper method.
 	inline static bool isEven(const unsigned int i) { return ((i & 1) == 0); }
@@ -212,30 +217,59 @@ void CAD::addSamplePointsTo(sample_type & S, const root_type & roots)
     }
 
     typename root_type::const_iterator root = roots.begin(),
-                                       nextRoot,
+                                       nextRoot = roots.begin(),
                                        endRoot = roots.end();
+    ++nextRoot;
 
     tmp::ReserveHelper(S, 2*roots.size() + 1);
-
     tmp::PushBack(S, Algebraic::MakeWideRational( root->lower() - 1 ));
 
-    for ( ; ; ++root)
+    while (nextRoot != endRoot)
     {
-        nextRoot = root; // This block is necessary b/c root is not
-        ++nextRoot;      // necessarily a RandomAccessIterator.
-        if (nextRoot == endRoot)
-            break;
-
         tmp::PushBack(S, *root);
 
     	GiNaC::numeric s( (root->upper() + nextRoot->lower())/2 );
     	tmp::PushBack(S, Algebraic::MakeWideRational(s));
 
     	assert(*root < *nextRoot);
+
+    	++root;
+    	++nextRoot;
     }
 
     tmp::PushBack(S, *root);
     tmp::PushBack(S, Algebraic::MakeWideRational( root->upper() + 1 ));
 }
+
+/*!
+ * \param F A vector of non-zero polynomials.
+ */
+template <typename T>
+void CAD::addRoots2To(T & roots,
+                      const Algebraic & alpha,
+                      const PolynomialQQ::vector & F)
+{
+    PolynomialQ                 r;
+    Algebraic::modifying_set    P;
+
+    for (PolynomialQQ::vector::const_iterator
+         f = F.begin(), e = F.end(); f != e; ++f)
+    {
+        r = PolynomialQQ::Resultant(PolynomialQQ(alpha.getEx()), *f, 1);
+        r.addRootsTo(P);
+        Algebraic::SeparateIntervals(P);
+        Algebraic::vector d(P.begin(), P.end());
+
+        for (Algebraic::modifying_set::const_iterator
+             beta = P.begin(), e = P.end(); beta != e; ++beta)
+            if /*(f->signIsZeroAt(alpha, *beta))*/ (f->signAt2(alpha, *beta) == 0)
+                tmp::PushBack(roots, *beta);
+
+        P.clear();
+    }
+}
+
+// f->signIsZeroAt
+// f->isSignZeroAt
 
 #endif // __CAD__

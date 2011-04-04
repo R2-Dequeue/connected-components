@@ -52,60 +52,6 @@ unsigned int PolynomialQ::sturm(const GiNaC::numeric & a,
     polynomials.reserve(this->degree()+2);
     this->sturmseq(polynomials);
     return PolynomialQ::sturm(polynomials, a, b);
-
-    /*PolynomialQ p2(*this);
-    PolynomialQ p1(this->getDerivative());
-
-    GiNaC::numeric  f2 = p2.eval(a),    g2 = p2.eval(b);
-    GiNaC::numeric  fa = p1.eval(a),    gb = p1.eval(b);
-    unsigned int    va = 0,             vb = 0;
-
-    if (f2 != 0) // if == 0 then do nothing
-    {
-    	if (fa == 0)
-    		fa = f2;
-    	else
-    		if (GiNaC::csgn(fa) != GiNaC::csgn(f2))
-    			va = 1;
-    }
-
-    if (g2 != 0) // if == 0 then do nothing
-    {
-    	if (gb == 0)
-    		gb = g2;
-    	else
-    		if (GiNaC::csgn(gb) != GiNaC::csgn(g2))
-    			vb = 1;
-    }
-
-    while (!p1.isZero())
-    {
-    	PolynomialQ rem = (p1 % p2)*(-1);
-    	GiNaC::numeric alpha = rem.eval(a), beta = rem.eval(b);
-
-    	if (alpha != 0)
-    	{
-    		if (fa != 0)
-    			if (GiNaC::csgn(alpha) != GiNaC::csgn(fa))
-    				va++;
-    		fa = alpha;
-    	}
-
-    	if (beta != 0)
-    	{
-    		if (gb != 0)
-    			if (GiNaC::csgn(beta) != GiNaC::csgn(gb))
-    				vb++;
-    		gb = beta;
-    	}
-
-    	p2 = p1;
-    	p1 = rem;
-    }
-
-    assert(int(va)-int(vb) >= 0);
-
-    return (va - vb);*/
 }
 
 int PolynomialQ::signAt(const Algebraic & a) const
@@ -123,10 +69,10 @@ int PolynomialQ::signAt(const Algebraic & a) const
     {
         IntervalQ Y = remainder.boundRange(alpha.getInterval());
 
-        if (Y.upper() < 0) return -1;
-        if (Y.lower() > 0) return  1;
+        if (Y.upper().is_negative()/* < 0*/) return -1;
+        if (Y.lower().is_positive()/* > 0*/) return  1;
 
-        alpha.tightenInterval();
+        alpha.tightenInterval(); // k = 1/2
     }
 
     assert(false);
@@ -473,13 +419,13 @@ IntervalQ PolynomialQ::boundRange(const IntervalQ & interval) const
 {
     assert(Invariants());
 
-    unsigned int d = degree();
-    IntervalQ range(getCoeff(d));
+    unsigned int d = this->degree();
+    IntervalQ range(this->getCoeff(d));
 
     for (int i = d-1; i >= 0; i--)
     {
         range *= interval;
-        range += IntervalQ(getCoeff(i));
+        range += IntervalQ(this->getCoeff(i));
     }
 
     assert(range.lower().is_rational());
