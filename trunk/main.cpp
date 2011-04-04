@@ -16,6 +16,7 @@
 #include "cad.hpp"
 #include "polynomialq.hpp"
 #include "polynomialqq.hpp"
+#include "poolallocator.hpp"
 
 //#define __RUNTESTS__
 
@@ -122,10 +123,10 @@ int main()
             //F.push_back("x+y");
             //F.push_back("x^2+y^2-1");
             //F.push_back("2*x+3*y^2-2");
-            F.push_back("-x+y^2");
-            F.push_back("x-y-5");
-            //F.push_back("(x^2 + y^2)^4 - (x^2 - y^2)^2");
-            //F.push_back("x + y + 1/2");
+            //F.push_back("-x+y^2");
+            //F.push_back("x-y-5");
+            F.push_back("(x^2 + y^2)^4 - (x^2 - y^2)^2");
+            F.push_back("x + y + 1/2");
 
             CAD mainCAD(F);
 

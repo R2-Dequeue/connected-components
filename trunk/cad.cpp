@@ -7,7 +7,7 @@
 
 #include <cassert>
 #include <numeric>
-//#include <functional>
+#include <iterator>
 
 #include <boost/foreach.hpp>
 
@@ -44,7 +44,8 @@ StacksIndex CAD::Cell(const Point & p) const
 		}
 	}
 
-	std::vector<Algebraic> betas = CAD::FindRoots2(p.first, F);
+	std::vector<Algebraic> betas; /**/ betas.reserve(stacks[ix].size());
+	CAD::addRoots2To(betas, p.first, this->irreducibles);
 
 	uint iy = 2*betas.size();
 
@@ -171,8 +172,17 @@ void CAD::out() const
 	if (F.size() >= 1)
 		cout << F[0] << endl;
 
-	for (uint i = 1; i < F.size(); i++)
+	for (uint i = 1; i < F.size(); ++i)
 		cout << "           " << F[i] << endl;
+
+    cout << "Number of irreducibles: " << irreducibles.size() << endl;
+	cout << "Irreducibles: ";
+
+	if (irreducibles.size() >= 1)
+		cout << irreducibles[0] << endl;
+
+	for (uint i = 1; i < irreducibles.size(); ++i)
+		cout << "              " << irreducibles[i] << endl;
 
 	cout << "Number of alphas: " << alphas.size() << endl;
 	cout << "Number of stacks: " << stacks.size() << endl;
@@ -208,7 +218,7 @@ void CAD::out() const
 	for (uint i = 0; i < cMatrix.rows(); ++i)
 	{
         for (uint j = 0; j < cMatrix.cols(); ++j)
-            cout << cMatrix(i, j) << " ";
+            cout << cMatrix(i, j);
         cout << endl;
 	}
 
@@ -232,6 +242,9 @@ void CAD::out() const
     }
 }
 
+/*!
+ * \todo Update to reflect recent changes.
+ */
 bool CAD::Invariants() const
 {
     if (this == NULL)
@@ -265,85 +278,71 @@ bool CAD::Invariants() const
     return true;
 }
 
+template <typename T>
+void PrintContainer(const T & c)
+{
+    std::copy(c.begin(), c.end(),
+              std::ostream_iterator<typename T::value_type>(std::cout, "\n"));
+    std::cout << std::endl;
+}
+
+template <typename T>
+void PrintContainerAlgebraicf(const T & c)
+{
+    for (typename T::const_iterator i = c.begin(), e = c.end(); i != e; ++i)
+        std::cout << *i << "\t\t" << i->approx(3).to_double() << std::endl;
+    std::cout << std::endl;
+}
+
 void CAD::ConstructorPart2()
 {
-    const GiNaC::numeric delta(1,128);
-
     for (unsigned int i = 0, e = this->F.size(); i < e; ++i)
         this->F[i].addIrreducibleFactorsTo(this->irreducibles);
     //tmp::Unique(this->irreducibles);
     assert(tmp::IsUnique(this->irreducibles));
 
-    std::cout << "F's:" << std::endl;
-    for (PolynomialQQ::vector::const_iterator
-         f = this->F.begin(), e = this->F.end(); f != e; ++f)
-        std::cout << *f << std::endl;
-
-    std::cout << "irreducibles:" << std::endl;
-    for (PolynomialQQ::vector::const_iterator
-         f = this->irreducibles.begin(), e = this->irreducibles.end(); f != e; ++f)
-        std::cout << *f << std::endl;
-    std::cout << "end" << std::endl;
-
     PolynomialQ::vector tempQ;
-    //tempQ.reserve
     CAD::addIrreducibleProjectionTo(tempQ, this->irreducibles);
     Algebraic::set setA;
 
-    for (PolynomialQ::vector::const_iterator f = tempQ.begin(), e = tempQ.end();
-         f != e; ++f)
+    for (PolynomialQ::vector::const_iterator
+         f = tempQ.begin(), e = tempQ.end(); f != e; ++f)
         f->addRootsTo(setA);
 
-    Algebraic::vector vectorA(setA.begin(), setA.end());
+    Algebraic::SeparateIntervals(setA);
 
-    for (Algebraic::vector::const_iterator
-         v = vectorA.begin(), e = vectorA.end(); v != e; ++v)
-        std::cout << *v << std::endl;
+    alphas.reserve(2*setA.size() + 1);
+    CAD::addSamplePointsTo(alphas, setA);
 
-    std::cout << "****" << std::endl;
-
-    Algebraic::SeparateIntervals(vectorA, delta);
-    for (Algebraic::vector::const_iterator
-         v = vectorA.begin(), e = vectorA.end(); v != e; ++v)
-        std::cout << *v << std::endl;
-    std::cout << "****" << std::endl;
-    assert(tmp::IsSortedUnique(vectorA));
-
-    alphas.reserve(2*vectorA.size() + 1);
-    CAD::addSamplePointsTo(alphas, vectorA);
-    //alphas = CAD::SamplePoints(PolynomialQ::FindRoots(CAD::Project(this->F)));
     assert(tmp::IsSortedUnique(alphas));
 
-    stacks.reserve(alphas.size());
+    stacks = std::vector< std::vector<Sample> >(alphas.size());
+    std::vector< std::vector<Sample> >::iterator T = stacks.begin();
+    setA.clear();
 
-    for (Algebraic::vector::const_iterator
+    for (Algebraic::vector::iterator
          alpha = alphas.begin(), e = alphas.end(); alpha != e; ++alpha)
-        std::cout << *alpha << std::endl;
-
-    for (Algebraic::vector::iterator alpha = alphas.begin(), e = alphas.end();
-         alpha != e; ++alpha)
     {
-        vectorA = CAD::FindRoots2(*alpha, this->F);
-        assert(tmp::IsSortedUnique(vectorA));
-        Algebraic::SeparateIntervals(vectorA, delta);
-        assert(tmp::IsSortedUnique(vectorA));
-        Algebraic::vector betas = CAD::SamplePoints(vectorA);
-        assert(tmp::IsSortedUnique(betas));
+        CAD::addRoots2To(setA, *alpha, this->irreducibles);
+        Algebraic::SeparateIntervals(setA);
+        Algebraic::vector betas;
+        CAD::addSamplePointsTo(betas, setA);
 
-        stacks.push_back(std::vector<Sample>()); // Should I name this parameter?
-        std::vector<Sample> & T = stacks.back();
+        T->reserve(betas.size());
 
-        T.reserve(betas.size());
-
-        BOOST_FOREACH(const Algebraic & beta, betas)
+        for (Algebraic::vector::const_iterator
+             beta = betas.begin(), e = betas.end(); beta != e; ++beta)
         {
-            std::vector<char> signs(this->F.size()); // preallocate
+            T->push_back(this->F.size());
 
             for (unsigned int i = 0, e = this->F.size(); i < e; ++i)
-                signs[i] = this->F[i].signAt(*alpha, beta);
+                T->back().signs[i] = this->F[i].signAt2(*alpha, *beta);
 
-            T.push_back(Sample(beta, signs));
+            T->back().y = *beta;
         }
+
+        ++T;
+        setA.clear();
     }
 
     MakeConnectivityMatrix();
@@ -584,6 +583,8 @@ PolynomialQ::vector CAD::Project(const PolynomialQQ::vector & F)
 void CAD::addIrreducibleProjectionTo(PolynomialQ::vector & P,
                                      const PolynomialQQ::vector & G)
 {
+    P.reserve(P.size() + (G.size()*(G.size() + 1))/2);
+
     for (PolynomialQQ::vector::size_type i = 0;        i < G.size()-1; i++)
         for (PolynomialQQ::vector::size_type j = i+1;  j < G.size();   j++)
             P.push_back(PolynomialQQ::Resultant(G[i], G[j], 2));
@@ -627,65 +628,4 @@ std::vector<Algebraic> CAD::SamplePoints(const std::vector<Algebraic> & roots)
     S.push_back(Algebraic::MakeWideRational(s));
 
 	return S;
-}
-
-/*!
- * \param F A vector of non-zero polynomials.
- */
-Algebraic::vector CAD::FindRoots2(const Algebraic & alpha,
-                                  const PolynomialQQ::vector & F)
-{
-    PolynomialQ r;
-
-    unsigned int n = 30;
-    //for (PolynomialQQ::vector::const_iterator
-    //     f = F.begin(), e = F.end(); f != e; ++f)
-    //    n += f->degree();
-
-    PolynomialQQ::vector irreds;    /**/ irreds.reserve(n);
-    PolynomialQ::vector vectorQ;    /**/ vectorQ.reserve(n);
-    Algebraic::vector   P;          /**/ P.reserve(n);
-    Algebraic::vector   R;          /**/ R.reserve(n);
-
-    for (PolynomialQQ::vector::const_iterator
-         f = F.begin(), e = F.end(); f != e; ++f)
-    {
-        f->addIrreducibleFactorsTo(irreds);
-
-        for (PolynomialQQ::vector::const_iterator
-             g = irreds.begin(), e2 = irreds.end(); g != e2; ++g)
-        {
-            r = PolynomialQQ::Resultant(PolynomialQQ(alpha.getEx()), *g, 1);
-            r.addIrreducibleFactorsTo(vectorQ);
-
-            for (PolynomialQ::vector::const_iterator
-                 i = vectorQ.begin(), e3 = vectorQ.end(); i != e3; ++i)
-                i->addRootsOfIrreducibleTo(P);
-
-            tmp::SortUnique(P);
-
-            for (Algebraic::vector::const_iterator
-                 beta = P.begin(), e = P.end(); beta != e; ++beta)
-            {
-                for (PolynomialQQ::vector::const_iterator
-                     g = F.begin(), e = F.end(); g != e; ++g)
-                {
-                    if (g->signAt(alpha, *beta) == 0)
-                    {
-                        R.push_back(*beta);
-                        break;
-                    }
-                }
-            }
-
-            vectorQ.clear();
-            P.clear();
-        }
-
-        irreds.clear();
-    }
-
-    tmp::SortUnique(R);
-
-    return R;
 }

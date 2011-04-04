@@ -472,10 +472,8 @@ template <class T> T & PolynomialQ::addRootsTo(T & roots) const
 
     // Assuming all factors are monic (thanks to IrreducibleFactors).
 
-    for (PolynomialQ::vector::const_iterator f = factors.begin(),
-                                             e = factors.end();
-         f != e;
-         ++f)
+    for (PolynomialQ::vector::const_iterator
+         f = factors.begin(), e = factors.end(); f != e; ++f)
     {
         const int d = f->degree();
 

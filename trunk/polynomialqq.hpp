@@ -9,6 +9,8 @@
 #include <cassert>
 #include <string>
 #include <vector>
+#include <set>
+#include <list>
 
 #include <boost/tuple/tuple.hpp>
 
@@ -42,13 +44,17 @@ public:
     PolynomialQQ(const GiNaC::ex & e);
 	PolynomialQQ(const GiNaC::numeric & n);
 
-    int degree() const; //!< The degree of the polynomial.
-    bool isMonic() const; //!< True iff the leading coefficient is 1.
+    int degreeX() const;
+    int degreeY() const;
+    //int degree() const; //!< The degree of the polynomial.
+    //bool isMonic() const; //!< True iff the leading coefficient is 1.
     bool isZero() const; //!< True iff the polynomial is '0'.
-	bool isIrreducible() const;
+	//bool isIrreducible() const;
     bool isConstant() const;
 
     const GiNaC::ex & getEx() const;
+//    PolynomialQ getCoeffX(const size_type i) const;
+//    PolynomialQ getCoeffY(const size_type i) const;
     PolynomialQQ getDerivative(unsigned int variable) const;
 
     void switchVariables();
@@ -66,6 +72,10 @@ public:
     template <class T> T & addIrreducibleFactorsTo(T & factors) const;
 
     int signAt(const Algebraic & alpha, const Algebraic & beta) const;
+    bool signIsZeroAt(const Algebraic & alpha, const Algebraic & beta) const;
+    int signAt2(const Algebraic & alpha, const Algebraic & beta) const;
+
+    IntervalQ boundRange(const IntervalQ & iX, const IntervalQ & iY) const;
 
     static PolynomialQQ::vector
         IrreducibleFactors(const PolynomialQQ::vector & F);
@@ -90,6 +100,10 @@ public:
     bool Invariants() const;
 
 //protected:
+
+    IntervalQ BoundRange1(const GiNaC::ex & poly,
+                          const GiNaC::symbol & var,
+                          const IntervalQ & interval) const;
 
     static Algebraic ANComb(Algebraic alpha,
                             Algebraic beta,
@@ -160,8 +174,22 @@ inline PolynomialQQ::PolynomialQQ(const GiNaC::numeric & n) : polynomial(n)
         throw std::invalid_argument("PolynomialQQ Constructor: GiNaC numeric "
         							"n is not a valid rational number.");
 }
-/*
-inline int PolynomialQQ::degree() const
+
+inline int PolynomialQQ::degreeX() const
+{
+    assert(Invariants());
+
+    return this->polynomial.degree(this->var1);
+}
+
+inline int PolynomialQQ::degreeY() const
+{
+    assert(Invariants());
+
+    return this->polynomial.degree(this->var2);
+}
+
+/*inline int PolynomialQQ::degree() const
 {
 	assert(Invariants());
 
@@ -173,8 +201,8 @@ inline bool PolynomialQQ::isMonic() const
 	assert(Invariants());
 
 	return (polynomial.lcoeff(variable) == 1);
-}
-*/
+}*/
+
 inline bool PolynomialQQ::isZero() const
 {
 	assert(Invariants());
@@ -300,7 +328,7 @@ std::auto_ptr<T> PolynomialQQ::getIrreducibleFactors() const
 {
     std::auto_ptr<T> factors(new T);
 
-    ReserveHelper(*factors, this->degree());
+    //ReserveHelper(*factors, this->degree());
 
     this->addIrreducibleFactorsTo(*factors);
 

@@ -15,8 +15,6 @@
 
 #include "polynomialq.hpp"
 
-struct ModifyingSetCompare;
-
 /*!
  * \brief A class representing an algebraic number.
  *
@@ -37,7 +35,9 @@ private:
      */
     PolynomialQ polynomial;
     //! The interval that contains this number with rational endpoints.
-    IntervalQ rootinterval;
+    mutable IntervalQ rootinterval;
+
+    struct ModifyingSetCompare;
 
 public:
 
@@ -76,7 +76,7 @@ public:
 
     int sgn() const;
     int compare(const Algebraic & B) const; //!< Compare this number with another.
-    Algebraic & tightenInterval(); //!< Shrinks the interval to a proper subset.
+    void tightenInterval() const; //!< Shrinks the interval to a proper subset.
     Algebraic & takeAbs();
     Algebraic & mul(const GiNaC::numeric & a);
     GiNaC::numeric Approximate() const; //!< A floating point approximation of this number.
@@ -86,7 +86,7 @@ public:
     std::string getString() const;
 
     //! Shrinks the internal intervals of a & b so that they don't intersect.
-    static void SeparateIntervals(Algebraic & a, Algebraic & b);
+    static void SeparateIntervals(const Algebraic & a, const Algebraic & b);
     static void SeparateIntervals(Algebraic & a, Algebraic & b,
                                   const GiNaC::numeric & delta);
     template <typename Container>
@@ -109,7 +109,7 @@ public:
 
 	friend class PolynomialQ;
 	friend struct ModifyingSetCompare;
-	friend class AlgebraicSorter;
+	//friend class AlgebraicSorter;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -122,36 +122,43 @@ inline bool operator>(const Algebraic & alpha, const Algebraic & beta);
 inline bool operator>=(const Algebraic & alpha, const Algebraic & beta);
 inline std::ostream & operator<<(std::ostream & output, const Algebraic & alpha);
 
-struct ModifyingSetCompare
+/*!
+ * \detail Used for comparison in sets containing roots.  Provides a speedup
+ *         by not repeating \p tightenInterval calls.
+ */
+struct Algebraic::ModifyingSetCompare
 {
-bool operator()(Algebraic & lhs, Algebraic & rhs)
+bool operator()(const Algebraic & lhs, const Algebraic & rhs)
 {
-    assert(lhs.Invariants());
-    assert(rhs.Invariants());
+    Algebraic & l = const_cast<Algebraic &>(lhs);
+    Algebraic & r = const_cast<Algebraic &>(rhs);
 
-    if (lhs.polynomial != rhs.polynomial)
+    assert(l.Invariants());
+    assert(r.Invariants());
+
+    if (l.polynomial != r.polynomial)
         while (true)
         {
-            if (lhs.rootinterval.lower() > rhs.rootinterval.upper())
+            if (l.rootinterval.lower() > r.rootinterval.upper())
                 return false;
-            if (lhs.rootinterval.upper() < rhs.rootinterval.lower())
+            if (l.rootinterval.upper() < r.rootinterval.lower())
                 return true;
 
-            lhs.tightenInterval();
-            rhs.tightenInterval();
+            l.tightenInterval();
+            r.tightenInterval();
         }
     else
         while (true)
         {
-            if (lhs.rootinterval.lower() >= rhs.rootinterval.lower() &&
-                lhs.rootinterval.upper() <= rhs.rootinterval.upper())
+            if (l.rootinterval.lower() >= r.rootinterval.lower() &&
+                l.rootinterval.upper() <= r.rootinterval.upper())
                 return false;
-            if (lhs.rootinterval.lower() > rhs.rootinterval.upper())
+            if (l.rootinterval.lower() > r.rootinterval.upper())
                 return false;
-            if (lhs.rootinterval.upper() < rhs.rootinterval.lower())
+            if (l.rootinterval.upper() < r.rootinterval.lower())
                 return true;
 
-            lhs.tightenInterval();
+            l.tightenInterval();
         }
 
     assert(false);
@@ -446,7 +453,7 @@ inline GiNaC::numeric Algebraic::approx(unsigned int d) const
  * \detail Modifies the parameters by resizing the intervals until they do not
  *         intersect.
  */
-inline void Algebraic::SeparateIntervals(Algebraic & a, Algebraic & b)
+inline void Algebraic::SeparateIntervals(const Algebraic & a, const Algebraic & b)
 {
     assert(a.Invariants());
     assert(b.Invariants());
@@ -489,13 +496,15 @@ void Algebraic::SeparateIntervals(Container & alphas)
     if (alphas.size() <= 1)
         return;
 
-    typename Container::iterator alpha = alphas.begin(),
+    typename Container::const_iterator alpha = alphas.begin(),
                                  endAlpha = alphas.end(),
                                  nextAlpha = alphas.begin();
     ++nextAlpha;
 
     while (nextAlpha != endAlpha)
     {
+        assert(*alpha < *nextAlpha);
+
         Algebraic::SeparateIntervals(*alpha, *nextAlpha);
 
         ++alpha;
@@ -533,6 +542,10 @@ void Algebraic::SeparateIntervals(Container & alphas,
         alpha->tightenInterval();
 }
 
+/*!
+ * \detail Creates a new \p Algebraic object with polynomial <p> x - a <\p>
+ *         and interval [\p a, \p a].
+ */
 inline Algebraic Algebraic::MakeRational(const GiNaC::numeric & a)
 {
     Algebraic alpha(PolynomialQ::GetVar() - a, IntervalQ(a, a));
@@ -540,6 +553,10 @@ inline Algebraic Algebraic::MakeRational(const GiNaC::numeric & a)
     return alpha;
 }
 
+/*!
+ * \detail Creates a new \p Algebraic object with a non-trivial interval
+ *         [<p>x - __DELTA, x + __DELTA<\p>].
+ */
 inline Algebraic Algebraic::MakeWideRational(const GiNaC::numeric & a)
 {
     Algebraic alpha(PolynomialQ::GetVar() - a,
@@ -596,6 +613,9 @@ inline bool operator>=(const Algebraic & alpha, const Algebraic & beta)
     return (alpha.compare(beta) >= 0);
 }
 
+/*!
+ * \detail Outputs an exact representation of the number to \p output.
+ */
 inline std::ostream & operator<<(std::ostream & output, const Algebraic & alpha)
 {
     output << "( [" << GiNaC::ex(alpha.lower()) << ", " << GiNaC::ex(alpha.upper())
