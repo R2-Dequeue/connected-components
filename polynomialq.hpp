@@ -26,8 +26,8 @@ class Algebraic; // To allow circular dependancy.
  * \brief A class representing univariate polynomials over the
  *        (infinite-precision) rationals.
  *
- * \detail The rationals are represented by bignum rationals and the polynomials
- *         are only limited by memory.
+ * \details The rationals are represented by bignum rationals and the polynomials
+ *          are only limited by memory.
  * \todo Add higher derivative function.
  * \todo Move test methods into proper test class and make it a friend.
  */
@@ -113,7 +113,7 @@ public:
 
     /*!
      * \brief Helper method for internal 'assert' checks.
-     * \detail This method is public but shouldn't really be published.
+     * \details This method is public but shouldn't really be published.
      */
 	bool Invariants() const;
 
@@ -129,10 +129,10 @@ public:
                             const GiNaC::ex expected,
                             unsigned int & count);
     PolynomialQ ParseString(const std::string & s) const;
-    int NumericToInt(const GiNaC::numeric & a) const;
-    int roundToInt(const std::vector<PolynomialQ> & F,
-                   sturmNumeric & L,
-                   sturmNumeric & U) const;
+    static int NumericToInt(const GiNaC::numeric & a);
+    static int roundToInt(const std::vector<PolynomialQ> & F,
+    					  sturmNumeric & L,
+    					  sturmNumeric & U);
 };
 
 //PolynomialQ SubResultant(const PolynomialQ & f,
@@ -155,6 +155,7 @@ std::ostream & operator<<(std::ostream & output, const PolynomialQ & p);
 
 #include "algebraic.hpp"
 
+//! The default constructor makes the zero polynomial.
 inline PolynomialQ::PolynomialQ() : polynomial(0) {}
 
 /*!
@@ -198,9 +199,9 @@ inline PolynomialQ::PolynomialQ(const GiNaC::numeric & n) : polynomial(n)
 }
 
 /*!
- * \detail Just returns the degree from the underlying 'ex' class. This implies
- *         that the degree of the polynomial '0' is 0 and not -1 as it is
- *         sometimes defined.
+ * \details Just returns the degree from the underlying 'ex' class. This implies
+ *          that the degree of the polynomial '0' is 0 and not -1 as it is
+ *          sometimes defined.
  */
 inline PolynomialQ::size_type PolynomialQ::degree() const
 {
@@ -210,7 +211,7 @@ inline PolynomialQ::size_type PolynomialQ::degree() const
 }
 
 /*!
- * \detail The zero polynomial is considered monic.
+ * \details The zero polynomial is considered monic.
  */
 inline bool PolynomialQ::isMonic() const
 {
@@ -308,8 +309,8 @@ inline PolynomialQ PolynomialQ::getMonic() const
 }
 
 /*!
- * \detail In the case that this is the zero polynomial, then this method
- *		   modifies nothing.
+ * \details In the case that \c *this is the zero polynomial, this method
+ *		    modifies nothing.
  */
 inline PolynomialQ & PolynomialQ::makeMonic()
 {
@@ -337,8 +338,8 @@ inline PolynomialQ PolynomialQ::getDerivative() const
 }
 
 /*!
- * \detail Note that this modifies the polynomial object; this doesn't just
- *         return a new polynomial that is the derivative.
+ * \details Note that this modifies the polynomial object; this doesn't just
+ *          return a new polynomial that is the derivative.
  */
 inline PolynomialQ & PolynomialQ::differentiate()
 {
@@ -360,10 +361,14 @@ inline PolynomialQ & PolynomialQ::negate()
     return *this;
 }
 
+/*!
+ * \return New heap allocated vector containing the sturm sequence of \c *this.
+ */
 inline std::auto_ptr<PolynomialQ::vector> PolynomialQ::sturmseq() const
 {
     return PolynomialQ::sturmseq(*this);
 }
+
 // at, in, to, over, on, within, inside, into, with, amid, among, amongst,
 // inside, into
 //
@@ -395,7 +400,7 @@ inline std::auto_ptr<PolynomialQ::vector> PolynomialQ::sturmseq() const
 // Class::IrreducibleFactors();
 
 /*!
- * \detail Returns the factors of the polynomial.
+ * \details Returns the factors of the polynomial.
  * \return Each factor appears only once (multiplicities are ignored). Each
  *		   factor is monic, irreducible, and not a constant.
  */
@@ -424,12 +429,17 @@ inline void PushBackMonic(T & factors, const GiNaC::ex & p)
 }
 }
 
+/*!
+ * \brief Get the irreducible factors of \c *this over the rational numbers.
+ * \details The factors added will be monic and will only appear once.
+ * \param factors A container that can hold \c Algebraic numbers.
+ */
 template <class T>
 T & PolynomialQ::addIrreducibleFactorsTo(T & factors) const
 {
     assert(Invariants());
 
-    GiNaC::ex p;// = GiNaC::factor(this->polynomial);
+    GiNaC::ex p;
 
     if (this->isConstant())
         return factors;
@@ -464,7 +474,13 @@ T & PolynomialQ::addIrreducibleFactorsTo(T & factors) const
     return factors;
 }
 
-template <class T> T & PolynomialQ::addRootsTo(T & roots) const
+/*!
+ * \details Adds the roots of \c this polynomial to \p roots. Multiplicities
+ *			will be ignored (so the added roots will be unique).
+ * \param roots A container that can hold \c Algebraic objects.
+ */
+template <class T>
+T & PolynomialQ::addRootsTo(T & roots) const
 {
     PolynomialQ::vector factors;
     factors.reserve(this->degree());
@@ -510,7 +526,13 @@ inline std::auto_ptr<T> PolynomialQ::getRoots() const
     return ptr;
 }
 
-template <class T> T & PolynomialQ::addRootsOfIrreducibleTo(T & roots) const
+/*!
+ * \details \c *this must be irreducible.
+ * \param roots A container that can hold \c Algebraic objects.
+ * \todo Go through all code and use \c size_t intead of \c unsigned \c int.
+ */
+template <class T>
+T & PolynomialQ::addRootsOfIrreducibleTo(T & roots) const
 {
     const unsigned int d = this->degree();
 
@@ -580,7 +602,7 @@ template <class T> T & PolynomialQ::addRootsOfIrreducibleTo(T & roots) const
 }
 
 /*!
- * \detail *this must be irreducible.
+ * \details \c *this must be irreducible.
  */
 template <class T>
 std::auto_ptr<T> PolynomialQ::getRootsOfIrreducible() const
@@ -607,7 +629,7 @@ inline PolynomialQ & PolynomialQ::subs(const GiNaC::ex & e)
 }
 
 /*!
- * \detail Should work in cases such as 'p += p;'
+ * \details Will work in the case 'p += p;'
  */
 inline PolynomialQ & PolynomialQ::operator+=(const PolynomialQ & rhs)
 {
@@ -622,7 +644,7 @@ inline PolynomialQ & PolynomialQ::operator+=(const PolynomialQ & rhs)
 }
 
 /*!
- * \detail Should work in cases such as 'p -= p;'
+ * \details Will work in the case 'p -= p;'
  */
 inline PolynomialQ & PolynomialQ::operator-=(const PolynomialQ & rhs)
 {
@@ -637,7 +659,7 @@ inline PolynomialQ & PolynomialQ::operator-=(const PolynomialQ & rhs)
 }
 
 /*!
- * \detail Should work in cases such as 'p *= p;'
+ * \details Will work in the case 'p *= p;'
  */
 inline PolynomialQ & PolynomialQ::operator*=(const PolynomialQ & rhs)
 {
@@ -651,6 +673,9 @@ inline PolynomialQ & PolynomialQ::operator*=(const PolynomialQ & rhs)
 	return *this;
 }
 
+/*!
+ * \details Will work in the case 'p /= p;'
+ */
 inline PolynomialQ & PolynomialQ::operator/=(const PolynomialQ & rhs)
 {
     assert(Invariants());
@@ -663,6 +688,9 @@ inline PolynomialQ & PolynomialQ::operator/=(const PolynomialQ & rhs)
     return *this;
 }
 
+/*!
+ * \details Will work in the case 'p %= p;'
+ */
 inline PolynomialQ & PolynomialQ::operator%=(const PolynomialQ & rhs)
 {
     assert(Invariants());

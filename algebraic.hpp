@@ -18,11 +18,11 @@
 /*!
  * \brief A class representing an algebraic number.
  *
- * \detail Internally, the number is represented by a polynomial and a closed
- *         interval on which the polynomial has one and only one root, which is
- *         the number. Note that the interval can be be a single point
- *         (i.e. [a, a]). Internally, the polynomial is represented by a
- *         GiNaC::ex object which has copy-on-write semantics.
+ * \details Internally, the number is represented by a polynomial and a closed
+ *          interval on which the polynomial has one and only one root, which is
+ *          the number. Note that the interval can be be a single point
+ *          (i.e. [a, a]). Internally, the polynomial is represented by a
+ *          GiNaC::ex object which has copy-on-write semantics.
  */
 class Algebraic
 {
@@ -30,8 +30,8 @@ private:
 
 	/*!
      * \brief The polynomial that has as one of its roots this number.
-     * \detail The polynomial is always monic, irreducible, and non-constant
-     *		   with rational coefficients.
+     * \details The polynomial is always monic, irreducible, and non-constant
+     *		    with rational coefficients.
      */
     PolynomialQ polynomial;
     //! The interval that contains this number with rational endpoints.
@@ -103,7 +103,7 @@ public:
 
     /*!
      * \brief Helper method for internal 'assert' checks.
-     * \detail This method is public but shouldn't really be published.
+     * \details This method is public but shouldn't really be published.
      */
 	bool Invariants() const;
 
@@ -123,8 +123,8 @@ inline bool operator>=(const Algebraic & alpha, const Algebraic & beta);
 inline std::ostream & operator<<(std::ostream & output, const Algebraic & alpha);
 
 /*!
- * \detail Used for comparison in sets containing roots.  Provides a speedup
- *         by not repeating \p tightenInterval calls.
+ * \details Used for comparison in sets containing roots.  Provides a speedup
+ *          by not repeating \p tightenInterval calls.
  */
 struct Algebraic::ModifyingSetCompare
 {
@@ -274,6 +274,9 @@ inline const PolynomialQ & Algebraic::getPolynomial() const
     return polynomial;
 }
 
+/*!
+ * \brief Gets the absolute value of this algebraic number.
+ */
 inline Algebraic Algebraic::getAbs() const
 {
     assert(Invariants());
@@ -295,6 +298,12 @@ inline Algebraic Algebraic::getAbs() const
     return alpha;
 }
 
+/*!
+ * \brief The sign of this algebraic number.
+ * \details +1 if > 0 \b
+ *			 0 if = 0 \b
+ *			-1 if < 0
+ */
 inline int Algebraic::sgn() const
 {
     assert(Invariants());
@@ -362,10 +371,6 @@ inline Algebraic & Algebraic::mul(const GiNaC::numeric & a)
     return *this;
 }
 
-/*!
- * \todo Double check that the max degree of an irreducible polynomial over
- *		 the rationals is 2 (its not, duh).
- */
 inline GiNaC::numeric Algebraic::Approximate() const
 {
     assert(Invariants());
@@ -384,6 +389,11 @@ inline GiNaC::numeric Algebraic::Approximate() const
     return (temp.lower() + temp.upper()) / 2;
 }
 
+/*!
+ * \brief Get the nearest integer.
+ * \details Rounds to the nearest integer and rounds half away from zero for
+ *			tie-breaking.
+ */
 inline int Algebraic::roundToInt()
 {
     assert(Invariants());
@@ -433,6 +443,10 @@ inline int Algebraic::roundToInt()
         return (quo.to_int()*(-1));
 }
 
+/*!
+ * \return A numeric approximation to this algebraic number accurate to \p d
+ *		   decimal points.
+ */
 inline GiNaC::numeric Algebraic::approx(unsigned int d) const
 {
     assert(Invariants());
@@ -450,8 +464,7 @@ inline GiNaC::numeric Algebraic::approx(unsigned int d) const
 }
 
 /*!
- * \detail Modifies the parameters by resizing the intervals until they do not
- *         intersect.
+ * \details After return, the intervals of \p a and \p b will be disjoint.
  */
 inline void Algebraic::SeparateIntervals(const Algebraic & a, const Algebraic & b)
 {
@@ -466,6 +479,10 @@ inline void Algebraic::SeparateIntervals(const Algebraic & a, const Algebraic & 
         }
 }
 
+/*!
+ * \details After return, the intervals of \p a and \p b will be disjoint and
+ *			no wider than \p delta.
+ */
 inline void Algebraic::SeparateIntervals(Algebraic & a, Algebraic & b,
                                          const GiNaC::numeric & delta)
 {
@@ -488,6 +505,8 @@ inline void Algebraic::SeparateIntervals(Algebraic & a, Algebraic & b,
 }
 
 /*!
+ * \details After return, the intervals of the \c Algebraic objects in \p alphas
+ *			will be disjoint.
  * \param alphas A container of SORTED Algebraic objects.
  */
 template <typename Container>
@@ -513,12 +532,18 @@ void Algebraic::SeparateIntervals(Container & alphas)
 }
 
 /*!
+ * \details After return, the intervals of the \c Algebraic objects in \p alphas
+ *			will be disjoint and no wider than \p delta.
  * \param alphas A container of SORTED Algebraic objects.
+ * \param delta A positive rational number.
  */
 template <typename Container>
 void Algebraic::SeparateIntervals(Container & alphas,
                                   const GiNaC::numeric & delta)
 {
+	assert(delta.is_positive());
+	assert(delta.is_rational());
+
     if (alphas.size() <= 1)
         return;
 
@@ -529,6 +554,8 @@ void Algebraic::SeparateIntervals(Container & alphas,
 
     while (nextAlpha != endAlpha)
     {
+    	assert(*alpha < *nextAlpha);
+
         Algebraic::SeparateIntervals(*alpha, *nextAlpha);
 
         while (alpha->upper() - alpha->lower() > delta)
@@ -543,8 +570,8 @@ void Algebraic::SeparateIntervals(Container & alphas,
 }
 
 /*!
- * \detail Creates a new \p Algebraic object with polynomial <p> x - a <\p>
- *         and interval [\p a, \p a].
+ * \details Creates a new \p Algebraic object with polynomial <p> x - a </p>
+ *          and interval [\p a, \p a].
  */
 inline Algebraic Algebraic::MakeRational(const GiNaC::numeric & a)
 {
@@ -554,8 +581,8 @@ inline Algebraic Algebraic::MakeRational(const GiNaC::numeric & a)
 }
 
 /*!
- * \detail Creates a new \p Algebraic object with a non-trivial interval
- *         [<p>x - __DELTA, x + __DELTA<\p>].
+ * \details Creates a new \c Algebraic object with a non-trivial interval
+ *          [<p>x - __DELTA, x + __DELTA</p>].
  */
 inline Algebraic Algebraic::MakeWideRational(const GiNaC::numeric & a)
 {
@@ -614,7 +641,7 @@ inline bool operator>=(const Algebraic & alpha, const Algebraic & beta)
 }
 
 /*!
- * \detail Outputs an exact representation of the number to \p output.
+ * \details Outputs an exact representation of the number to \p output.
  */
 inline std::ostream & operator<<(std::ostream & output, const Algebraic & alpha)
 {

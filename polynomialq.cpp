@@ -42,7 +42,7 @@
 const GiNaC::symbol & PolynomialQ::variable = PolynomialBase::var1;
 
 /*!
- * \detail a must be less than b.
+ * \details a must be less than b.
  * \todo Fix old code and uncomment.
  */
 unsigned int PolynomialQ::sturm(const GiNaC::numeric & a,
@@ -182,7 +182,7 @@ std::auto_ptr<PolynomialQ::vector> PolynomialQ::sturmseq(const PolynomialQ & p)
 }
 
 /*!
- * \param p Any polynomial (including zero and other constants).
+ * \details Any polynomial (including zero and other constants).
  */
 PolynomialQ::vector & PolynomialQ::sturmseq(PolynomialQ::vector & polys) const
 {
@@ -198,7 +198,7 @@ PolynomialQ::vector & PolynomialQ::sturmseq(PolynomialQ::vector & polys) const
 }
 
 /*!
- * \detail a < b.
+ * \details a < b.
  */
 unsigned int PolynomialQ::sturm(const std::vector<PolynomialQ> & F,
                                 const GiNaC::numeric & a,
@@ -258,7 +258,7 @@ unsigned int PolynomialQ::sturm(const std::vector<PolynomialQ> & F,
 }
 
 /*!
- * \detail a < b.
+ * \details a < b.
  */
 unsigned int PolynomialQ::sturm(const std::vector<PolynomialQ> & F,
                                 sturmNumeric & a,
@@ -346,7 +346,7 @@ unsigned int PolynomialQ::sturm(const std::vector<PolynomialQ> & F,
 }
 
 /*!
- * \detail Returns the factors of the polynomials in F in a vector.
+ * \details Returns the factors of the polynomials in F in a vector.
  * \param F A vector of non-zero polynomials. Constant polynomials are valid,
  *			but will not contribute anything to the output.
  * \return Each factor appears only once (multiplicities and common roots are
@@ -411,8 +411,8 @@ GiNaC::numeric
 }
 
 /*!
- * \detail Returns a bounding interval for the image of 'interval' in f. Uses
- *         Horner's scheme.
+ * \details Returns a bounding interval for the image of \p interval in f using
+ *          Horner's scheme.
  * \todo Does the polynomial need to be monic?
  */
 IntervalQ PolynomialQ::boundRange(const IntervalQ & interval) const
@@ -528,9 +528,9 @@ void PolynomialQ::TestCompare(const PolynomialQ p,
 }
 
 /*!
- * \detail This method checks that the internal state is free of errors. It is
- *         intended to be used only with 'assert' at the begining of its
- *         methods ( assert(Invariants()); ).
+ * \details This method checks that the internal state is free of errors. It is
+ *          intended to be used only with 'assert' at the begining of its
+ *          methods ( assert(Invariants()); ).
  * \todo Lookup how to get the set of symbols in an expression.
  */
 bool PolynomialQ::Invariants() const
@@ -566,7 +566,7 @@ bool PolynomialQ::Invariants() const
 }
 
 /*!
- * \detail Parses the string wrt the internal variable.
+ * \details Parses the string wrt the internal variable.
  * \throws parse_error Thrown by GiNaC if parsing fails (inherits
  *		   invalid_argument).
  * \todo Report 'parser.strict' typo in the tutorial.
@@ -584,7 +584,7 @@ PolynomialQ PolynomialQ::ParseString(const std::string & s) const
     return p;
 }
 
-int PolynomialQ::NumericToInt(const GiNaC::numeric & a) const
+int PolynomialQ::NumericToInt(const GiNaC::numeric & a)
 {
     assert(Invariants());
 
@@ -620,9 +620,11 @@ int PolynomialQ::NumericToInt(const GiNaC::numeric & a) const
         return (quo.to_int());
 }
 
+/*!
+ */
 int PolynomialQ::roundToInt(const std::vector<PolynomialQ> & F,
                             sturmNumeric & L,
-                            sturmNumeric & U) const
+                            sturmNumeric & U)
 {
     assert(Invariants());
 
@@ -650,6 +652,10 @@ int PolynomialQ::roundToInt(const std::vector<PolynomialQ> & F,
     return PolynomialQ::NumericToInt(a);
 }
 
+/*!
+ * \details Works similarly to the method \c addRootsTo, but rounds the numbers
+ *			to \c int's.
+ */
 std::vector<int> & PolynomialQ::addRoundedRootsTo(std::vector<int> & roots) const
 {
     const unsigned int d = this->degree();

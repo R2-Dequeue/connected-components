@@ -7,8 +7,8 @@
 #include <memory>
 
 /*!
- * \detail Useful mostly for classes with trivial default constructors as
- *         standard C arrays are used.
+ * \details Useful mostly for classes with trivial default constructors as
+ *          standard C arrays are used.
  */
 template <typename T, size_t N = 32> // std::size_t ?
 class StackArray

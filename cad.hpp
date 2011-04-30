@@ -22,7 +22,7 @@
 typedef std::pair<Algebraic, Algebraic> Point;
 /*!
  * \brief Stores pairs of indices into the CAD.
- * \detail Indices start at 0, not at 1.
+ * \details Indices start at 0, not at 1.
  */
 typedef std::pair<unsigned int, unsigned int>   StacksIndex;
 typedef unsigned int                            CellIndex;
@@ -32,10 +32,10 @@ typedef unsigned int                            ComponentIndex;
 /*!
  * \brief The cyclical algebraic decomposition of a set of polynomials.
  *
- * \detail This object presents an interface for determining the partitions
- *         of the plane made by two polynomials. For example [x+y, x-y]
- *         creates four partitions, and [x^2+y^2-1, x^2+y^2-4] creates three
- *         partitions.
+ * \details This object presents an interface for determining the partitions
+ *          of the plane made by two polynomials. For example [x+y, x-y]
+ *          creates four partitions, and [x^2+y^2-1, x^2+y^2-4] creates three
+ *          partitions.
  * \todo Maybe change to lists for internal private functions for fast
  *		 modifications.
  * \todo Maybe template methods so they can take/return various containers?
@@ -67,8 +67,8 @@ private:
     std::vector<PartitionIndex> components;
     /*!
      * \brief Stores the connectivity information.
-     * \detail The indices run from 0 to n-1. Symmetric, transitive, and
-     *         reflexive (m_i,i == 1). Entries are either 0 or 1.
+     * \details The indices run from 0 to n-1. Symmetric, transitive, and
+     *          reflexive (m_i,i == 1). Entries are either 0 or 1.
      * \todo Use bitset-like class for better storage.
      */
     GiNaC::matrix cMatrix;
@@ -105,7 +105,7 @@ public:
     void out() const;
     /*!
      * \brief Helper method for internal 'assert' checks.
-     * \detail This method is public but shouldn't really be published.
+     * \details This method is public but shouldn't really be published.
      */
     bool Invariants() const;
 
@@ -205,6 +205,7 @@ inline const std::vector< std::vector<unsigned int> > & CAD::GetPartitions() con
 }
 
 /*!
+ * \param S Ordered container of unique \c Algebraic numbers.
  * \param roots Must have disjoint intervals.
  */
 template <typename sample_type, typename root_type>
@@ -242,7 +243,8 @@ void CAD::addSamplePointsTo(sample_type & S, const root_type & roots)
 }
 
 /*!
- * \param F A vector of non-zero polynomials.
+ * \details Calculates all unique roots \c beta of <c> F(alpha, beta) </c> and
+ *			adds them to the container \p roots.
  */
 template <typename T>
 void CAD::addRoots2To(T & roots,
@@ -268,8 +270,5 @@ void CAD::addRoots2To(T & roots,
         P.clear();
     }
 }
-
-// f->signIsZeroAt
-// f->isSignZeroAt
 
 #endif // __CAD__
