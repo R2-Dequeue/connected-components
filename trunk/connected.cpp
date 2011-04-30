@@ -11,7 +11,7 @@
 // subresultant
 // SubResultant
 
-/*!
+/*
  * \brief Returns the kth subresultant of f and g with respect to the variable
  *        x, including constants like 1 and 0.
  *

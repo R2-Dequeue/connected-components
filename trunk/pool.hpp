@@ -37,11 +37,11 @@ protected:
     void * allocate();
     void deallocate(void * mem);
 
-	const size_t                block_size;
-	boost::scoped_array<char>   data;           // const?
+	const size_t                		block_size;
+	const boost::scoped_array<char>		data;
 
-	char *                      head_element;
-	const char *                end_element;
+	char *                      		head_element;
+	const char *                		end_element;
 
 	// Really need pointer to the begining for error checking in deallocate.
 };

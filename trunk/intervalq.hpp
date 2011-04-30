@@ -16,9 +16,9 @@
 
 /*!
  * \brief A class representing an interval over the rational numbers.
- * \detail The class attempts to be syntax-compatible with the Boost library
- *         interval class (this class was quickly created because I was
- *         getting some odd results).
+ * \details The class attempts to be syntax-compatible with the Boost library
+ *          interval class (this class was quickly created because I was
+ *          getting some odd results).
  */
 class IntervalQ
 {
@@ -101,7 +101,7 @@ inline void IntervalQ::assignUpper(const GiNaC::numeric & b)
 }
 
 /*!
- * \detail Works correctly in cases such as: I += I.
+ * \details Works correctly in cases such as: I += I.
  */
 inline IntervalQ & IntervalQ::operator+=(const IntervalQ & rhs)
 {
@@ -114,7 +114,8 @@ inline IntervalQ & IntervalQ::operator+=(const IntervalQ & rhs)
 }
 
 /*!
- * \detail Works correctly in cases such as: I *= I.
+ * \details Works correctly in cases such as: I *= I.
+ * \todo Switch to boost simultaneous min/max.
  */
 inline IntervalQ & IntervalQ::operator*=(const IntervalQ & rhs)
 {

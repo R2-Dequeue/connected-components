@@ -27,7 +27,7 @@ void * alloca(size_t);
 
 namespace aBaBaBaB {
 // formacroonly, formacrosonly, macro, macrohelp, macroreserved,
-// reservedformacro, macroonly, formacrouse, formacrouseonly
+// reservedformacro, macroonly, formacrouse, formacrouseonly, aBaBaBaB
 
 size_t count = 0; // so so ghetto...
 size_t width = 0;
@@ -53,8 +53,8 @@ inline boost::tuple<char *, size_t, size_t> ____B(void * ptr)
 
 }
 
-#define salloc(C, N) \
-    aBaBaBaB::____B( alloca( aBaBaBaB::____A<(C)>( (N) ) ) )
+#define salloc(BlockWidth, NumberOfBlocks) \
+	aBaBaBaB::____B( alloca( aBaBaBaB::____A<(BlockWidth)>( (NumberOfBlocks) ) ) )
 
 template <typename T>
 class PoolAllocator;
@@ -69,7 +69,7 @@ class StackPool : public SimplePool
 public:
 
     /*!
-     * \detail \c t should always be the return value from \c salloc.
+     * \details \p t should always be the return value from macro \c salloc.
      */
     //                                    data,   bsize,  count
     explicit StackPool(const boost::tuple<char *, size_t, size_t> & t) :
@@ -77,6 +77,7 @@ public:
 
 private:
 
+	//! Prevent this from being created on the stack.
 	void * operator new(size_t n);
 
 	// Make '&' operator private?
@@ -85,6 +86,20 @@ private:
 // Namespaces: pool, pl, aloc, allo, alloc, mem, memory
 
 ////////////////////////////////////////////////////////////////////////////////
+
+#ifdef __GNUC__
+#define salloc(BlockWidth, NumberOfBlocks)									\
+	({																		\
+		size_t bwidth  = (BlockWidth);										\
+		size_t nblocks = (NumberOfBlocks);									\
+		static_assert(bwidth != 0);											\
+		static_assert( (bwidth & (bwidth-1)) == 0 );						\
+		assert(nblocks > 0);												\
+		boost::make_tuple(alloca(bwidth * (nblocks + 1)),					\
+						  bwidth,											\
+						  nblocks);											\
+	})
+#endif // __GNUC__
 
 /*#define salloc2(B, N)
 

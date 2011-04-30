@@ -95,7 +95,7 @@ public:
 
     /*!
      * \brief Helper method for internal 'assert' checks.
-     * \detail This method is public but shouldn't really be published.
+     * \details This method is public but shouldn't really be published.
      */
     bool Invariants() const;
 
@@ -377,7 +377,7 @@ T & PolynomialQQ::addIrreducibleFactorsTo(T & factors) const
 }
 
 /*!
- * \detail Should work in cases such as 'p += p;'
+ * \details Should work in cases such as 'p += p;'
  */
 inline PolynomialQQ & PolynomialQQ::operator+=(const PolynomialQQ & rhs)
 {
@@ -392,7 +392,7 @@ inline PolynomialQQ & PolynomialQQ::operator+=(const PolynomialQQ & rhs)
 }
 
 /*!
- * \detail Should work in cases such as 'p -= p;'
+ * \details Should work in cases such as 'p -= p;'
  */
 inline PolynomialQQ & PolynomialQQ::operator-=(const PolynomialQQ & rhs)
 {
@@ -407,7 +407,7 @@ inline PolynomialQQ & PolynomialQQ::operator-=(const PolynomialQQ & rhs)
 }
 
 /*!
- * \detail Should work in cases such as 'p *= p;'
+ * \details Should work in cases such as 'p *= p;'
  */
 inline PolynomialQQ & PolynomialQQ::operator*=(const PolynomialQQ & rhs)
 {
@@ -502,7 +502,7 @@ inline bool operator!=(const PolynomialQQ & lhs, const PolynomialQQ & rhs)
 }
 
 /*!
- * \detail Parses the string wrt the internal variables.
+ * \details Parses the string wrt the internal variables.
  * \throws parse_error Thrown by GiNaC if parsing fails (inherits
  *		   invalid_argument).
  */

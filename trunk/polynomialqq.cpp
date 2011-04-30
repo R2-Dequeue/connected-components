@@ -56,8 +56,8 @@ bool PolynomialQQ::signIsZeroAt(const Algebraic & alpha,
 }
 
 /*!
- * \detail This is a ghetto work-around because GiNaC seems to be choking on
- *         some of my resultant calculations in ANComb...
+ * \details This is a ghetto work-around because GiNaC seems to be choking on
+ *          some of my resultant calculations in ANComb...
  */
 int PolynomialQQ::signAt2(const Algebraic & alpha, const Algebraic & beta) const
 {
@@ -193,9 +193,9 @@ PolynomialQ PolynomialQQ::Resultant(const PolynomialQQ & f,
     return PolynomialQ(res);
 }
 
-/*!
- * \detail Returns the kth subresultant of f and g with respect to the variable
- *         x, including constants like 1 and 0.
+/*
+ * \details Returns the kth subresultant of f and g with respect to the variable
+ *          x, including constants like 1 and 0.
  *
  * \param f Any univariate polynomial in x.
  * \param g Same as f.

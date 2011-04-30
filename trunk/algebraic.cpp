@@ -12,9 +12,9 @@
 
 /*!
  * \param B Any Algebraic number, including *this.
- * \return -1 if *this in less than B.
- *          0 if *this is equal to B.
- *          1 if *this is greater than B.
+ * \return -1 if *this in less than B. \b
+ *          0 if *this is equal to B. \b
+ *         +1 if *this is greater than B.
  */
 int Algebraic::compare(const Algebraic & B) const
 {
