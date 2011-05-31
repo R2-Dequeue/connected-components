@@ -32,7 +32,7 @@ protected:
         block_size(bsize),
         data(takeOwnership ? mem : NULL),
         head_element(SimplePool::Align(mem, bsize)),
-        end_element(head_element + (bsize*n)) {}
+        end_element(head_element + (bsize*n)) { assert(mem != NULL); }
 
     void * allocate();
     void deallocate(void * mem);
@@ -46,6 +46,9 @@ protected:
 	// Really need pointer to the begining for error checking in deallocate.
 };
 
+/*!
+ * \param ptr A non-NULL pointer.
+ */
 inline char * SimplePool::Align(const char * ptr, size_t width)
 {
     typedef size_t integral_type;
