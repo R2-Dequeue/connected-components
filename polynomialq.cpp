@@ -620,11 +620,9 @@ int PolynomialQ::NumericToInt(const GiNaC::numeric & a)
         return (quo.to_int());
 }
 
-/*!
- */
 int PolynomialQ::roundToInt(const std::vector<PolynomialQ> & F,
                             sturmNumeric & L,
-                            sturmNumeric & U)
+                            sturmNumeric & U) const
 {
     assert(Invariants());
 
