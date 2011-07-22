@@ -16,7 +16,7 @@
 #include "cad.hpp"
 #include "polynomialq.hpp"
 #include "polynomialqq.hpp"
-#include "poolallocator.hpp"
+//#include "poolallocator.hpp"
 
 //#define __RUNTESTS__
 

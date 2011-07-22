@@ -130,9 +130,9 @@ public:
                             unsigned int & count);
     PolynomialQ ParseString(const std::string & s) const;
     static int NumericToInt(const GiNaC::numeric & a);
-    static int roundToInt(const std::vector<PolynomialQ> & F,
+    int roundToInt(const std::vector<PolynomialQ> & F,
     					  sturmNumeric & L,
-    					  sturmNumeric & U);
+    					  sturmNumeric & U) const;
 };
 
 //PolynomialQ SubResultant(const PolynomialQ & f,
