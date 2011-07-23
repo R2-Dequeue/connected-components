@@ -1,8 +1,3 @@
-/*!
- * \file
- * \author Chris de Pujo
- */
-
 #ifndef __TEMPLATEHELP__
 #define __TEMPLATEHELP__
 

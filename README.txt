@@ -1,4 +1,4 @@
-Note: To compile this project requires GiNaC and CLN libraries.
+Note: This project requires the GiNaC, CLN, and GMP libraries.
 
 Connected Components
 	In the fall of 2010 I took a Computer Algebra course.  During the course we slowly built up an algorithm/program to solve the connected components problem.

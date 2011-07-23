@@ -1,8 +1,3 @@
-/*!
- * \file
- * \author Chris de Pujo
- */
-
 #ifndef __POLYNOMIALQ__
 #define __POLYNOMIALQ__
 
@@ -20,7 +15,7 @@
 #include "sturmnumeric.hpp"
 #include "templatehelp.hpp"
 
-class Algebraic; // To allow circular dependancy.
+class Algebraic; // To allow circular dependency.
 
 /*!
  * \brief A class representing univariate polynomials over the
