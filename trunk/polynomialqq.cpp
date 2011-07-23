@@ -1,8 +1,3 @@
-/*!
- * \file
- * \author Chris de Pujo
- */
-
 #include "polynomialqq.hpp"
 
 #include <stdexcept>
@@ -34,13 +29,6 @@ int PolynomialQQ::signAt(const Algebraic & alpha, const Algebraic & beta) const
                                              var2 == T.getEx())).expand());
 
     return h.signAt(gamma);
-
-/*
- local gamma, Ss, _z, h;
- gamma, Ss := Simple(alphas,_z);
- h := eval(f,{seq(Var(alphas[i])=Ss[i],i=1..nops(Ss))});
- return Sign1(gamma, h, _z);
-*/
 }
 
 bool PolynomialQQ::signIsZeroAt(const Algebraic & alpha,
@@ -389,9 +377,6 @@ boost::tuple<Algebraic, PolynomialQ, PolynomialQ>
     PolynomialQ &   T       = t.get<2>();
 
     return boost::make_tuple(gamma, T % gamma.getPolynomial(), S);
-// Simple(alpha, beta)
-//      gamma, S,T := Simple2(beta,alpha);
-//      return gamma, T % gamma.getPolynomial(), S;
 }
 
 bool validSimple2(Algebraic alpha, Algebraic beta,
@@ -496,63 +481,7 @@ boost::tuple<Algebraic, PolynomialQ, PolynomialQ>
     }
 
     return boost::make_tuple(gamma, PolynomialQ(S), PolynomialQ(T));
-
-/* A := alpha[2];
- B := beta[2];
- u := Var(A);
- v := Var(B);
- t := 1;
- while true do
-   gamma := ANComb(alpha,beta,_z,t);
-   C     := gamma[2];
-   s1    := Sres(eval(A,u=_z-t*v),B,1,v);
-   g     := gcdex(C, coeff(s1,v,1), _z, 'c1','c2');
-   if degree(g,_z) = 0 then
-       break
-   fi;
-   t := t + 1;
- od;
- T  := rem((-coeff(s1,v,0)) * c2 / g, C, _z);
- S  := _z - t*T;
- gamma := eval(gamma,_z=w);
- S     := eval(S,    _z=w);
- T     := eval(T,    _z=w);
- return gamma, S, T; */
 }
-
-/*GiNaC::ex PolynomialQQ::gcdex(GiNaC::ex f,
-							  GiNaC::ex g,
-							  const GiNaC::symbol & var,
-							  GiNaC::ex & c1,
-							  GiNaC::ex & c2)
-{
-    const GiNaC::ex _f(f), _g(g);
-
-	GiNaC::ex x = 0;	c1 = 1;
-	GiNaC::ex y = 1;	c2 = 0;
-	GiNaC::ex t, quotient;
-
-	while (g != 0)
-	{
-		quotient = GiNaC::quo(f, g, var);
-
-		t = g;
-		g = GiNaC::rem(f, g, var);
-		f = t;
-
-		t = x;
-		x = c1 - quotient*x;
-		c1 = t;
-
-		t = y;
-		y = c2 - quotient*y;
-		c2 = t;
-	}
-
-	assert(f == (_f*c1 + _g*c2).expand());
-
-	return f;
-}*/
 
 GiNaC::ex PolynomialQQ::gcdex(const GiNaC::ex & f,
 							  const GiNaC::ex & g,
@@ -617,19 +546,6 @@ GiNaC::ex PolynomialQQ::sres(const GiNaC::ex & f,
         M(i-1, n+m-2*k-1) = pow(var, m-k-(i-(n-k)))     *g;
 
     return M.determinant();
-
-/*
- local m,n,i,j,Mf,Mfl,Mg,Mgl,M;
- m   := degree(f,v);
- n   := degree(g,v);
- if m=k and n=k then return g fi;
- Mf  := Matrix(n-k,n-k+m-k-1, (i,j) -> coeff(f,v,m-j+i));
- Mfl := Vector(n-k, i -> v^(n-k-i) * f);
- Mg  := Matrix(m-k,n-k+m-k-1, (i,j) -> coeff(g,v,n-j+i));
- Mgl := Vector(m-k, i -> v^(m-k-i) * g);
- M   := <<Mf|Mfl>,<Mg|Mgl>>;
- return Determinant(M);
-*/
 }
 /*
 std::vector<GiNaC::ex>

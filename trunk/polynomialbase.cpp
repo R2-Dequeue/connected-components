@@ -1,8 +1,3 @@
-/*!
- * \file
- * \author Chris de Pujo
- */
-
 #include "polynomialbase.hpp"
 
 const GiNaC::symbol PolynomialBase::var1 = GiNaC::symbol("x");

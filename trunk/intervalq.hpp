@@ -1,8 +1,3 @@
-/*!
- * \file
- * \author Chris de Pujo
- */
-
 #ifndef __INTERVALQ__
 #define __INTERVALQ__
 

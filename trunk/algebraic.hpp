@@ -1,8 +1,3 @@
-/*!
- * \file
- * \author Chris de Pujo
- */
-
 #ifndef __ALGEBRAIC__
 #define __ALGEBRAIC__
 

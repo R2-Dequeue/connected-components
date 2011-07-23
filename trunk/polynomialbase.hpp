@@ -1,8 +1,3 @@
-/*!
- * \file
- * \author Chris de Pujo
- */
-
 #ifndef __POLYNOMIALBASE__
 #define __POLYNOMIALBASE__
 

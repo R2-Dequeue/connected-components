@@ -1,8 +1,3 @@
-/*!
- * \file
- * \author Chris de Pujo
- */
-
 #ifndef __POLYNOMIALQQ__
 #define __POLYNOMIALQQ__
 

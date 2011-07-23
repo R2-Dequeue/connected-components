@@ -1,8 +1,3 @@
-/*!
- * \file
- * \author Chris de Pujo
- */
-
 #include "cad.hpp"
 
 #include <cassert>

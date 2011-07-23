@@ -1,8 +1,3 @@
-/*!
- * \file
- * \author Chris de Pujo
- */
-
 #ifndef __STURMNUMERIC__
 #define __STURMNUMERIC__
 

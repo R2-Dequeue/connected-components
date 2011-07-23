@@ -1,8 +1,3 @@
-/*!
- * \file
- * \author Chris de Pujo
- */
-
 #include "polynomialq.hpp"
 
 #include <string>
