@@ -586,8 +586,6 @@ PolynomialQ PolynomialQ::ParseString(const std::string & s) const
 
 int PolynomialQ::NumericToInt(const GiNaC::numeric & a)
 {
-    assert(Invariants());
-
     // Round to nearest
     // Round half away from zero for tie-breaking
 
