@@ -193,7 +193,7 @@ PolynomialQ::vector & PolynomialQ::sturmseq(PolynomialQ::vector & polys) const
 }
 
 /*!
- * \details a < b.
+ * \details \p a must be strictly less than \p b.
  */
 unsigned int PolynomialQ::sturm(const std::vector<PolynomialQ> & F,
                                 const GiNaC::numeric & a,
