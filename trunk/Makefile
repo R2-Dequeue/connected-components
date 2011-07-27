@@ -16,7 +16,7 @@ LIBS = -lginac -lcln -lgmp
 CFLAGS = -Wall -fexceptions -O2 $(DEBUG) -I$(BOOSTDIR) -I$(INCLUDEDIR)
 LFLAGS = $(DEBUG) -L$(LIBDIR)
 
-# Note: Do NOT put LIBs up here; leave it below.
+# Note: Do NOT put LIBs up here; leave below.
 
 ###############################################################################
 
@@ -28,6 +28,9 @@ $(NAME).exe: $(OBJECTS)
 
 clean:
 	$(RM) *.o $(NAME).exe
+
+html:
+	doxygen Doxyfile
 
 #	$@ name of the target
 #	$^ name of all prerequisites with duplicates removed

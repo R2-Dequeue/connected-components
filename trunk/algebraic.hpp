@@ -18,6 +18,8 @@
  *          the number. Note that the interval can be be a single point
  *          (i.e. [a, a]). Internally, the polynomial is represented by a
  *          GiNaC::ex object which has copy-on-write semantics.
+ * \todo Can I make a constructor that will only take STATIC ints or longs?
+ *       (for initialization).
  */
 class Algebraic
 {
@@ -45,9 +47,6 @@ public:
     Algebraic();
     //! Basic constructor to assemble an algebraic number.
     Algebraic(const PolynomialQ & p, const IntervalQ & i);
-
-    // can I make a constructor that will only take STATIC ints or longs?
-    // (for initialization).
 
     //! Returns the lower bound of the interval.
     const GiNaC::numeric & lower() const;
@@ -119,7 +118,8 @@ inline std::ostream & operator<<(std::ostream & output, const Algebraic & alpha)
 
 /*!
  * \details Used for comparison in sets containing roots.  Provides a speedup
- *          by not repeating \p tightenInterval calls.
+ *          by not repeating \p tightenInterval calls. Also, a rare use of
+ *          \c const_cast.
  */
 struct Algebraic::ModifyingSetCompare
 {
@@ -172,6 +172,9 @@ inline Algebraic::Algebraic()
     assert(Invariants());
 }
 
+/*!
+ * \details \p p must have one and only one root in i.
+ */
 inline Algebraic::Algebraic(const PolynomialQ & p, const IntervalQ & i)
     : polynomial(p), rootinterval(i)
 {
@@ -366,6 +369,9 @@ inline Algebraic & Algebraic::mul(const GiNaC::numeric & a)
     return *this;
 }
 
+/*
+ * \note \c fsolve seems to be buggy.
+ */
 inline GiNaC::numeric Algebraic::Approximate() const
 {
     assert(Invariants());
