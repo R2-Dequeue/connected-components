@@ -1,14 +1,19 @@
 NAME = ConnectedComponents
 
-SOURCES = algebraic.cpp cad.cpp main.cpp polynomialbase.cpp polynomialq.cpp polynomialqq.cpp
+CORE_SOURCES = algebraic.cpp cad.cpp polynomialbase.cpp polynomialq.cpp polynomialqq.cpp
+
+SOURCES = $(CORE_SOURCES) main.cpp
 OBJECTS = $(SOURCES:.cpp=.o)
+CHECK_SOURCES = $(CORE_SOURCES) check/check.cpp
+CHECK_OBJECTS = $(CHECK_SOURCES:.cpp=.o)
 
 CC = mingw32-g++
 RM = del
 
-BOOSTDIR = C:\dev\boost_1_45_0
-INCLUDEDIR = C:\MinGW\msys\1.0\local\include
-LIBDIR = C:\MinGW\msys\1.0\local\lib
+ROOT = C:/MinGW/msys/1.0
+BOOSTDIR = C:/dev/boost_1_45_0
+INCLUDEDIR = $(ROOT)/local/include
+LIBDIR = $(ROOT)/local/lib
 
 DEBUG = -DNDEBUG -s
 LIBS = -lginac -lcln -lgmp
@@ -24,10 +29,16 @@ $(NAME).exe: $(OBJECTS)
 	$(CC) $(LFLAGS) $(OBJECTS) -o $@ $(LIBS)
 
 %.o: %.cpp
-	$(CC) $(CFLAGS) -c $<
+	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	$(RM) *.o $(NAME).exe
+	$(RM) *.o $(NAME).exe check.exe check\*.o
+
+check: check.exe
+	check.exe
+
+check.exe: $(CHECK_OBJECTS)
+	$(CC) $(LFLAGS) $(CHECK_OBJECTS) -o $@ $(LIBS)
 
 html:
 	doxygen Doxyfile
