@@ -8,7 +8,7 @@ Connected Components
 	I wanted to document my code well and keep the documentation inline with the source code.  I decided on using doxygen to generate the documentation for the source.  The actual comments in the code are QT-style (as opposed to JavaDoc-style comments) because I was considering using QT for a graphical layer and thought there might be value in being able to use doxygen or the QT documentation generator.
 	I wanted to use infinite precision arithmetic so I needed extra libraries.  After research I decided on using the GiNaC library for general unlimited-precision computation.  GiNaC itself uses a lower level number library called the Class Library for Numbers (CLN).  CLN itself can use a very low level library that is written mostly in assembly language called the GNU Multi Precision (GMP) library.  GMP is used by many computational software packages like Mathematica and Maple.
 
-	I created a GUI using the native GUI toolkit wxWidgets (formerly wxWindows).
+GUI using the native GUI toolkit wxWidgets (formerly wxWindows).
 
 
 
